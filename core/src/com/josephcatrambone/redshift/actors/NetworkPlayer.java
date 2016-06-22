@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena.actors;
+package com.josephcatrambone.redshift.actors;
 
 /**
  * Created by Jo on 12/20/2015.

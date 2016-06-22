@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena;
+package com.josephcatrambone.redshift;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -7,6 +7,7 @@ import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
@@ -15,7 +16,7 @@ import com.badlogic.gdx.physics.box2d.*;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import static com.josephcatrambone.metalskyarena.PhysicsConstants.PPM;
+import static com.josephcatrambone.redshift.PhysicsConstants.PPM;
 
 /**
  * Created by Jo on 12/22/2015.
@@ -24,6 +25,7 @@ public class Level {
 	public static final int[] BACKGROUND_LAYERS = new int[]{0, 1}; // Background + foreground.  No overlay yet.
 	public static final int[] OVERLAY_LAYERS = new int[]{2};
 	public static final String COLLISION_LAYER = "collision";
+	public static final String TRIGGER_LAYER = "trigger";
 	public static final String COOL_TYPE = "cool";
 	public static final String TELEPORT_TYPE = "teleport";
 	public static final String GOAL_TYPE = "goal";
@@ -57,7 +59,13 @@ public class Level {
 		bdef.type = BodyDef.BodyType.StaticBody;
 		collision = MainGame.world.createBody(bdef);
 		//TiledMapTileLayer mapLayer = (TiledMapTileLayer) // TODO: Error checking.
-		MapObjects mapObjects = map.getLayers().get(COLLISION_LAYER).getObjects();
+
+		// Merge the collision layers into larger objects.
+		TiledMapTileLayer collisionLayer = (TiledMapTileLayer)map.getLayers().get(COLLISION_LAYER);
+		// TODO: Start here.
+
+		// Build the triggers.
+		MapObjects mapObjects = map.getLayers().get(TRIGGER_LAYER).getObjects();
 		// First, make the rectangle colliders.
 		for(RectangleMapObject rob : mapObjects.getByType(RectangleMapObject.class)) {
 			// Boxes come back in pixel coordinates, not map coordinates.

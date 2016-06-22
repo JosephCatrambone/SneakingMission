@@ -1,6 +1,6 @@
-package com.josephcatrambone.metalskyarena.scenes;
+package com.josephcatrambone.redshift.scenes;
 
-import com.josephcatrambone.metalskyarena.MainGame;
+import com.josephcatrambone.redshift.MainGame;
 
 /**
  * Created by Jo on 1/17/2016.

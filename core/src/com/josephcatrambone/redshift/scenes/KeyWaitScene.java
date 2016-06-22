@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena.scenes;
+package com.josephcatrambone.redshift.scenes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.josephcatrambone.metalskyarena.MainGame;
+import com.josephcatrambone.redshift.MainGame;
 
 /**
  * Created by Jo on 1/17/2016.

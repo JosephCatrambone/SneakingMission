@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena;
+package com.josephcatrambone.redshift;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -6,8 +6,8 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.physics.box2d.World;
-import com.josephcatrambone.metalskyarena.actors.Player;
-import com.josephcatrambone.metalskyarena.scenes.*;
+import com.josephcatrambone.redshift.actors.Player;
+import com.josephcatrambone.redshift.scenes.*;
 
 import java.util.Random;
 import java.util.Stack;

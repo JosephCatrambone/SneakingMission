@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena;
+package com.josephcatrambone.redshift;
 
 /**
  * Created by Jo on 12/20/2015.

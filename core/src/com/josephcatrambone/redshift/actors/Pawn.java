@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena.actors;
+package com.josephcatrambone.redshift.actors;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -7,9 +7,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Align;
-import com.josephcatrambone.metalskyarena.MainGame;
+import com.josephcatrambone.redshift.MainGame;
 
-import static com.josephcatrambone.metalskyarena.PhysicsConstants.PPM;
+import static com.josephcatrambone.redshift.PhysicsConstants.PPM;
 
 /**
  * Created by Jo on 12/20/2015.

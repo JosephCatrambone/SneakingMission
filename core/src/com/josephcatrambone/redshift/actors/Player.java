@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena.actors;
+package com.josephcatrambone.redshift.actors;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.josephcatrambone.metalskyarena.MainGame;
+import com.josephcatrambone.redshift.MainGame;
 
 import java.util.HashMap;
 import java.util.Stack;

@@ -1,8 +1,8 @@
-package com.josephcatrambone.metalskyarena.handlers;
+package com.josephcatrambone.redshift.handlers;
 
 import com.badlogic.gdx.physics.box2d.*;
-import com.josephcatrambone.metalskyarena.Level;
-import com.josephcatrambone.metalskyarena.actors.Player;
+import com.josephcatrambone.redshift.Level;
+import com.josephcatrambone.redshift.actors.Player;
 
 import java.util.Map;
 

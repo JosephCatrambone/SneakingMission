@@ -1,4 +1,4 @@
-package com.josephcatrambone.metalskyarena.scenes;
+package com.josephcatrambone.redshift.scenes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -8,11 +8,11 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.josephcatrambone.metalskyarena.Level;
-import com.josephcatrambone.metalskyarena.MainGame;
-import com.josephcatrambone.metalskyarena.actors.Pawn;
-import com.josephcatrambone.metalskyarena.actors.Player;
-import com.josephcatrambone.metalskyarena.handlers.RegionContactListener;
+import com.josephcatrambone.redshift.Level;
+import com.josephcatrambone.redshift.MainGame;
+import com.josephcatrambone.redshift.actors.Pawn;
+import com.josephcatrambone.redshift.actors.Player;
+import com.josephcatrambone.redshift.handlers.RegionContactListener;
 
 /**
  * Created by Jo on 12/20/2015.
