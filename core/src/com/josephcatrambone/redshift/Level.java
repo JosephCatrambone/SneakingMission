@@ -30,9 +30,6 @@ public class Level {
 	public static final String COOL_TYPE = "cool";
 	public static final String TELEPORT_TYPE = "teleport";
 	public static final String GOAL_TYPE = "goal";
-	public static final String MAP_HEIGHT_PROPERTY = "height";
-	public static final String TILE_WIDTH_PROPERTY = "tilewidth";
-	public static final String TILE_HEIGHT_PROPERTY = "tileheight";
 	public static final String PLAYER_START_X_PROPERTY = "playerStartX";
 	public static final String PLAYER_START_Y_PROPERTY = "playerStartY";
 	TiledMap map;
@@ -178,7 +175,8 @@ public class Level {
 				// If the width is nonzero and the height is nonzero, make rect.
 				Rectangle r =
 					new Rectangle(
-						x, y,
+						x*collisionLayer.getTileWidth(),
+						y*collisionLayer.getTileHeight(),
 						widths[x+y*collisionLayer.getWidth()]*collisionLayer.getTileWidth(),
 						heights[x+y*collisionLayer.getWidth()]*collisionLayer.getTileHeight()
 					);

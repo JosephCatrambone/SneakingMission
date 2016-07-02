@@ -19,17 +19,11 @@ public class Player extends Pawn {
 
 	public static final String PLAYER_USER_DATA = "player";
 	public float walkSpeed = 6.5f;
-	public float temperature = 0;
-	public float maxTemperature = 10f;
-	public boolean startCooling = false;
 
 	public static final String PLAYER_SPRITESHEET = "player.png";
 
 	public static final String PLAYER_COOLDOWN = "cooldown.wav";
-	public static final String PLAYER_OVERHEAT = "overheat.wav";
-	public static final float OVERHEAT_SOUND_THRESHOLD = 0.7f;
 	private Sound cooldown = null;
-	private Sound overheat = null;
 
 	public Player(int x, int y) {
 		create(x, y, 8, 8, 1.0f, PLAYER_SPRITESHEET);
@@ -78,7 +72,6 @@ public class Player extends Pawn {
 		animations[State.DEAD.ordinal()][Direction.DOWN.ordinal()] = new Animation(0.5f, deadFrames);
 
 		cooldown = MainGame.assetManager.get(PLAYER_COOLDOWN);
-		overheat = MainGame.assetManager.get(PLAYER_OVERHEAT);
 
 		// Always use first fixture for labelling contact data.
 		HashMap<String, String> fixtureData = new HashMap<String, String>();
@@ -104,45 +97,13 @@ public class Player extends Pawn {
 		}
 	}
 
-	public void heat(float amount) {
-		startCooling = false;
-
-		// When we're about to cross the overheating threshold, play a sound.
-		if(temperature < OVERHEAT_SOUND_THRESHOLD*maxTemperature && temperature + amount > OVERHEAT_SOUND_THRESHOLD*maxTemperature) {
-			overheat.play();
-		}
-
-		// Adjust temp.
-		temperature += amount;
-		if(temperature > maxTemperature) {
-			temperature = maxTemperature;
-			kill();
-		}
-	}
-
-	public void cool(float amount) {
-		if(startCooling == false) {
-			startCooling = true;
-			cooldown.play();
-			overheat.stop();
-		}
-		temperature -= (temperature/2)*amount;
-		if(temperature < 0) { temperature = 0;  }
-	}
-
 	public void kill() {
 		this.state = State.DEAD;
 	}
 
 	@Override
 	public void draw(Batch spriteBatch, float alpha) {
-		// TODO: Better linear interpolation of colors using real color theory.
-		float ratio = temperature/maxTemperature + 0.1f;
-		ratio = Math.max(0.0f, Math.min(1.0f, ratio)); // Clamp.
-		float invRatio = 1.0f - ratio;
-		spriteBatch.setColor(ratio, invRatio, invRatio, 1.0f);
 		super.draw(spriteBatch, alpha);
-		spriteBatch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	public InputListener getInputListener() {

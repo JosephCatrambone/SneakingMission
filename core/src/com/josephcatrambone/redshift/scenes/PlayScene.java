@@ -83,13 +83,6 @@ public class PlayScene extends Scene {
 			MainGame.switchState((MainGame.GameState.WIN));
 		}
 
-		// Update player's heat.
-		if(regionContactListener.playerCooling) {
-			player.cool(deltaTime);
-		} else {
-			player.heat(deltaTime);
-		}
-
 		// Touch teleporter?
 		if(regionContactListener.playerTeleport) {
 			regionContactListener.playerTeleport = false;

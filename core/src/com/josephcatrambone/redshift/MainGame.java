@@ -44,7 +44,6 @@ public class MainGame extends ApplicationAdapter {
 		assetManager.load("missing.png", Texture.class);
 		assetManager.load(Player.PLAYER_SPRITESHEET, Texture.class);
 		assetManager.load(Player.PLAYER_COOLDOWN, Sound.class);
-		assetManager.load(Player.PLAYER_OVERHEAT, Sound.class);
 		assetManager.load(IntroScene.INTRO_BG, Texture.class);
 		assetManager.load(TitleScene.TITLE_BG, Texture.class);
 		assetManager.load(HowToPlayScene.HOW_TO_PLAY, Texture.class);
