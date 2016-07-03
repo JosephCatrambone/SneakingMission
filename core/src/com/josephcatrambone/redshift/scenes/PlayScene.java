@@ -1,6 +1,7 @@
 package com.josephcatrambone.redshift.scenes;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
@@ -56,7 +57,7 @@ public class PlayScene extends Scene {
 
 		// Spawn an NPC
 		npcs = new ArrayList<NPC>();
-		NPC npc = new NPC(150, 150);
+		NPC npc = new NPC(150, 450);
 		stage.addActor(npc);
 		npcs.add(npc);
 
@@ -115,6 +116,11 @@ public class PlayScene extends Scene {
 			if(npc.inConeOfVision(player.getX(), player.getY())) {
 				System.out.println("NPC sees you! " + System.currentTimeMillis());
 			}
+		}
+
+		// DEBUG: Press 'p' to path-find to player.
+		if(Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+			npcs.get(0).setWaypoints(level.getPath(npcs.get(0).getX(), npcs.get(0).getY(), player.getX(), player.getY()), true);
 		}
 
 		// Camera follows player?

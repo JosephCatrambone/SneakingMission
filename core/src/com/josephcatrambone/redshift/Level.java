@@ -11,11 +11,10 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 import static com.josephcatrambone.redshift.PhysicsConstants.PPM;
 
@@ -221,5 +220,115 @@ public class Level {
 		return Integer.parseInt(map.getProperties().get(PLAYER_START_Y_PROPERTY, "0", String.class));
 		//(map.getProperties().get(MAP_HEIGHT_PROPERTY, 0, Integer.class) * map.getProperties().get(TILE_HEIGHT_PROPERTY, 0, Integer.class) - Integer.parseInt(map.getProperties().get(PLAYER_START_Y_PROPERTY, "0", String.class)));
 
+	}
+
+	public Vector2[] getPath(float startX, float startY, float goalX, float goalY) {
+		// Returns an unoptimized list of squares in world coordinates which don't touch any blocked cells.
+		// Internally, this function will convert the start and goal to local squares, then solve with A*.
+		TiledMapTileLayer collisionLayer = (TiledMapTileLayer)map.getLayers().get(COLLISION_LAYER);
+		int mapWidth = collisionLayer.getWidth();
+		int sx = (int)(startX / collisionLayer.getTileWidth());
+		int sy = (int)(startY / collisionLayer.getTileHeight());
+		int gx = (int)(goalX / collisionLayer.getTileWidth());
+		int gy = (int)(goalY / collisionLayer.getTileHeight());
+
+		// Run A*.
+		// TODO: We're doing an O(n) search through the list of candidates. Switch to priority queue and write comparator.
+		LinkedList<MapCandidatePoint> candidates = new LinkedList<MapCandidatePoint>();
+		int[] parents = new int[collisionLayer.getWidth()*collisionLayer.getHeight()]; // -1 means no parent.
+		float[] costs = new float[collisionLayer.getWidth()*collisionLayer.getHeight()];
+		int previousPoint = -1;
+		int startId = sx+sy*mapWidth;
+		int goalId = gx+gy*mapWidth;
+
+		// Push the start onto the stack.
+		parents[startId] = -1;
+		candidates.add(new MapCandidatePoint(startId, 0, Math.abs(sx-gx)+Math.abs(sy-gy)));
+
+		while(!candidates.isEmpty()) {
+			// Go through and get the best candidate.
+			// TODO: See above.  Use priority queue to speed this up.
+			float bestDistance = Float.POSITIVE_INFINITY;
+			MapCandidatePoint bestCandidate = null;
+			for(MapCandidatePoint c : candidates) {
+				if(c.cost + c.minDistanceToGoal < bestDistance) {
+					bestCandidate = c;
+					bestDistance = c.cost + c.minDistanceToGoal;
+				}
+			}
+			candidates.remove(bestCandidate); // Pop.
+
+			// Mark our parent and cost so far.
+			parents[bestCandidate.id] = previousPoint;
+			previousPoint = bestCandidate.id;
+			costs[bestCandidate.id] = bestCandidate.cost;
+
+			// Are we at the goal?
+			if(bestCandidate.id == goalId) {
+				// Handle it.
+				break;
+			}
+
+			// Add the neighbors of this position with their costs.
+			// Right up left down.
+			int nextId = 0;
+			int x = bestCandidate.id%mapWidth;
+			int y = bestCandidate.id/mapWidth;
+			// Don't revisit these.
+			nextId = (x+1)+y*mapWidth;
+			if(parents[nextId] == 0 && collisionLayer.getCell(x+1, y) == null) {
+				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x + 1 - gx) + Math.abs(y - gy)));
+			}
+			nextId = x+(y+1)*mapWidth;
+			if(parents[nextId] == 0 && collisionLayer.getCell(x, y+1) == null) {
+				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - gx) + Math.abs(y + 1 - gy)));
+			}
+			nextId = (x-1)+y*mapWidth;
+			if(parents[nextId] == 0 && collisionLayer.getCell(x-1, y) == null) {
+				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - 1 - gx) + Math.abs(y - gy)));
+			}
+			nextId = x+(y-1)*mapWidth;
+			if(parents[nextId] == 0 && collisionLayer.getCell(x, y-1) == null) {
+				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - gx) + Math.abs(y - 1 - gy)));
+			}
+		}
+
+		// If the goal has no parent, there's no path.
+		if(parents[goalId] == -1) {
+			return null;
+		} else {
+			// Convert each of the parents to real-world coordinates, then push it onto the stack.
+			// Reverse at the end.
+			Vector2[] path = null;
+
+			LinkedList<Vector2> tempPath = new LinkedList<Vector2>(); // A double-linked list.
+			int currentId = goalId;
+			while(currentId != -1) { // TODO: Should we check for -1 here?
+				// Convert to world space.
+				int x = currentId%mapWidth;
+				int y = currentId/mapWidth;
+				// The 0.5 is a half-tile width so we go to the center of the tile.
+				tempPath.push(new Vector2(x*collisionLayer.getTileWidth() + (collisionLayer.getTileWidth()*0.5f), y*collisionLayer.getTileHeight() + (collisionLayer.getTileHeight()*0.5f)));
+				currentId = parents[currentId];
+			}
+			// Convert our list into an array and reverse it.
+			path = new Vector2[tempPath.size()];
+			int i=0;
+			// Since we did 'push' on our linked list, this path is already reversed.
+			//java.util.Iterator<Vector2> iter = tempPath.descendingIterator();
+			for(Vector2 v : tempPath) {
+				path[i++] = v;
+			}
+			return path;
+		}
+	}
+
+	private class MapCandidatePoint {
+		public int id;
+		public float cost;
+		public float minDistanceToGoal;
+		MapCandidatePoint(int id, float cost, float dist){
+			this.id = id; this.cost = cost; this.minDistanceToGoal = dist;
+		}
 	}
 }

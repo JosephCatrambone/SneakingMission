@@ -11,24 +11,30 @@ import com.josephcatrambone.redshift.MainGame;
 /**
  * Created by Jo on 1/17/2016.
  */
-public class KeyWaitScene extends Scene {
+public class CodecScene extends Scene {
 
 	String backgroundImageFilename;
-	Scene nextScene;
+	String leftImageFilename;
+	String rightImageFilename;
+
 	SpriteBatch batch;
 	Camera camera;
 	Texture bg;
+	Texture leftImage;
+	Texture rightImage;
+	boolean keyWasPressed;
 
 	public boolean clearBlack; // If false, clear color is white.
 
-	public KeyWaitScene(String backgroundImageFilename, Scene nextScene) {
-		this.backgroundImageFilename = backgroundImageFilename;
-		this.nextScene = nextScene;
+	public CodecScene(String codecSequenceName) {
+		this.keyWasPressed = false;
 	}
 
 	@Override
 	public void create() {
 		bg = MainGame.assetManager.get(this.backgroundImageFilename);
+		leftImage = MainGame.assetManager.get(this.leftImageFilename);
+		rightImage = MainGame.assetManager.get(this.rightImageFilename);
 		camera = new OrthographicCamera(bg.getWidth(), bg.getHeight());
 		batch = new SpriteBatch();
 		camera.update();
@@ -43,6 +49,8 @@ public class KeyWaitScene extends Scene {
 	@Override
 	public void dispose() {
 		MainGame.assetManager.unload(backgroundImageFilename);
+		MainGame.assetManager.unload(rightImageFilename);
+		MainGame.assetManager.unload(leftImageFilename);
 	}
 
 	@Override
@@ -56,8 +64,15 @@ public class KeyWaitScene extends Scene {
 
 	@Override
 	public void update(float deltaTime) {
-		if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY)) {
-			MainGame.switchState(nextScene);
+		if(keyWasPressed && !Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
+			keyWasPressed = false;
+			advanceState();
+		} else if(Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY)) {
+			keyWasPressed = true;
 		}
+	}
+
+	public void advanceState() {
+
 	}
 }
