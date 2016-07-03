@@ -20,56 +20,15 @@ public class Player extends Pawn {
 	public static final String PLAYER_USER_DATA = "player";
 	public float walkSpeed = 6.5f;
 
-	public static final String PLAYER_SPRITESHEET = "player.png";
+	public static final String SPRITESHEET = "dude.png";
 
 	public static final String PLAYER_COOLDOWN = "cooldown.wav";
 	private Sound cooldown = null;
 
 	public Player(int x, int y) {
-		create(x, y, 8, 8, 1.0f, PLAYER_SPRITESHEET);
+		create(x, y, 8, 8, 1.0f, SPRITESHEET);
 
-		// TODO: Hard-coding animations blows.
-		// Idle
-		animations[State.IDLE.ordinal()][Direction.RIGHT.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 0*16, 0, 16, 16)
-		});
-		animations[State.IDLE.ordinal()][Direction.UP.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 2*16, 0, 16, 16)
-		});
-		animations[State.IDLE.ordinal()][Direction.LEFT.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 4*16, 0, 16, 16)
-		});
-		animations[State.IDLE.ordinal()][Direction.DOWN.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 6*16, 0, 16, 16)
-		});
-
-		// Moving
-		animations[State.MOVING.ordinal()][Direction.RIGHT.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 0*16, 0, 16, 16),
-				new TextureRegion(this.spriteSheet, 1*16, 0, 16, 16)
-		});
-		animations[State.MOVING.ordinal()][Direction.UP.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 2*16, 0, 16, 16),
-				new TextureRegion(this.spriteSheet, 3*16, 0, 16, 16)
-		});
-		animations[State.MOVING.ordinal()][Direction.LEFT.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 4*16, 0, 16, 16),
-				new TextureRegion(this.spriteSheet, 5*16, 0, 16, 16)
-		});
-		animations[State.MOVING.ordinal()][Direction.DOWN.ordinal()] = new Animation(0.1f, new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 6*16, 0, 16, 16),
-				new TextureRegion(this.spriteSheet, 7*16, 0, 16, 16)
-		});
-
-		// Dead
-		TextureRegion[] deadFrames = new TextureRegion[] {
-				new TextureRegion(this.spriteSheet, 8*16, 0, 16, 16),
-				new TextureRegion(this.spriteSheet, 9*16, 0, 16, 16)
-		};
-		animations[State.DEAD.ordinal()][Direction.RIGHT.ordinal()] = new Animation(0.5f, deadFrames);
-		animations[State.DEAD.ordinal()][Direction.UP.ordinal()] = new Animation(0.5f, deadFrames);
-		animations[State.DEAD.ordinal()][Direction.LEFT.ordinal()] = new Animation(0.5f, deadFrames);
-		animations[State.DEAD.ordinal()][Direction.DOWN.ordinal()] = new Animation(0.5f, deadFrames);
+		createDefaultAnimations();
 
 		cooldown = MainGame.assetManager.get(PLAYER_COOLDOWN);
 

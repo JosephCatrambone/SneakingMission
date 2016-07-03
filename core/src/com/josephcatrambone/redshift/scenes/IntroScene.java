@@ -10,7 +10,7 @@ public class IntroScene extends KeyWaitScene {
 	public static final String INTRO_BG = "intro.png";
 
 	public IntroScene() {
-		super(INTRO_BG, MainGame.GameState.TITLE);
+		super(INTRO_BG, new TitleScene());
 		this.clearBlack = false;
 	}
 }

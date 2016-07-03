@@ -10,7 +10,7 @@ public class GameOverScene extends KeyWaitScene {
 	public static final String GAME_OVER_BG = "gameover.png";
 
 	public GameOverScene() {
-		super(GAME_OVER_BG, MainGame.GameState.TITLE);
+		super(GAME_OVER_BG, new TitleScene());
 		this.clearBlack = true;
 	}
 }

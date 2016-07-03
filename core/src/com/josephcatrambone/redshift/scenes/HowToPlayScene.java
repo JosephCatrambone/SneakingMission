@@ -9,7 +9,7 @@ public class HowToPlayScene extends KeyWaitScene {
 	public static final String HOW_TO_PLAY = "instructions.png";
 
 	public HowToPlayScene() {
-		super(HOW_TO_PLAY, MainGame.GameState.PLAY);
+		super(HOW_TO_PLAY, new PlayScene());
 		this.clearBlack = false;
 	}
 }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.physics.box2d.World;
+import com.josephcatrambone.redshift.actors.NPC;
 import com.josephcatrambone.redshift.actors.Player;
 import com.josephcatrambone.redshift.scenes.*;
 
@@ -30,7 +31,7 @@ public class MainGame extends ApplicationAdapter {
 	public void create () {
 		loadAllAssets();
 
-		switchState(GameState.INTRO);
+		switchState(new IntroScene());
 	}
 
 	@Override
@@ -42,7 +43,8 @@ public class MainGame extends ApplicationAdapter {
 
 	public void loadAllAssets() {
 		assetManager.load("missing.png", Texture.class);
-		assetManager.load(Player.PLAYER_SPRITESHEET, Texture.class);
+		assetManager.load(Player.SPRITESHEET, Texture.class);
+		assetManager.load(NPC.SPRITESHEET, Texture.class);
 		assetManager.load(Player.PLAYER_COOLDOWN, Sound.class);
 		assetManager.load(IntroScene.INTRO_BG, Texture.class);
 		assetManager.load(TitleScene.TITLE_BG, Texture.class);
@@ -52,32 +54,22 @@ public class MainGame extends ApplicationAdapter {
 		assetManager.finishLoading();
 	}
 
-	public static void switchState(GameState newState) {
-		Scene newScene = null;
-		switch(newState) {
-			case INTRO:
-				newScene = new IntroScene();
-				break;
-			case TITLE:
-				newScene = new TitleScene();
-				break;
-			case HOW_TO_PLAY:
-				newScene = new HowToPlayScene();
-				break;
-			case PLAY:
-				newScene = new PlayScene();
-				break;
-			case GAME_OVER:
-				newScene = new GameOverScene();
-				break;
-			case WIN:
-				newScene = new WinScene();
-				break;
-		}
-		if(!scenes.empty()) {
+	public static void popState() {
+		if(scenes.isEmpty()) {
 			scenes.pop().dispose();
 		}
-		newScene.create();
-		scenes.push(newScene);
+	}
+
+	public static void pushState(Scene scene) {
+		scene.create();
+		scenes.push(scene);
+	}
+
+	public static void switchState(Scene scene) {
+		if(!scenes.isEmpty()) {
+			scenes.pop().dispose();
+		}
+		scene.create();
+		scenes.push(scene);
 	}
 }

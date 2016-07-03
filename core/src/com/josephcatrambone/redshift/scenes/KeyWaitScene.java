@@ -14,16 +14,16 @@ import com.josephcatrambone.redshift.MainGame;
 public class KeyWaitScene extends Scene {
 
 	String backgroundImageFilename;
-	MainGame.GameState nextState;
+	Scene nextScene;
 	SpriteBatch batch;
 	Camera camera;
 	Texture bg;
 
 	public boolean clearBlack; // If false, clear color is white.
 
-	public KeyWaitScene(String backgroundImageFilename, MainGame.GameState nextState) {
+	public KeyWaitScene(String backgroundImageFilename, Scene nextScene) {
 		this.backgroundImageFilename = backgroundImageFilename;
-		this.nextState = nextState;
+		this.nextScene = nextScene;
 	}
 
 	@Override
@@ -57,7 +57,7 @@ public class KeyWaitScene extends Scene {
 	@Override
 	public void update(float deltaTime) {
 		if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY)) {
-			MainGame.switchState(nextState);
+			MainGame.switchState(nextScene);
 		}
 	}
 }

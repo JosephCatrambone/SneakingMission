@@ -3,6 +3,7 @@ package com.josephcatrambone.redshift.actors;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -75,6 +76,38 @@ public class Pawn extends Actor {
 		FixtureDef fdef = new FixtureDef();
 		fdef.shape = shape;
 		physicsBody.createFixture(fdef);
+	}
+
+	public void createDefaultAnimations() {
+		// TODO: Hard-coding animations blows.
+		// Idle
+		int w = 16;
+		int h = 24;
+		// Right up left down.
+		for(int i=0; i < Direction.NUM_DIRECTIONS.ordinal(); i++) {
+			animations[State.IDLE.ordinal()][i] = new Animation(0.1f, new TextureRegion[]{
+					new TextureRegion(this.spriteSheet, 1*w, i*h, w, h)
+			});
+		}
+
+		// Moving
+		for(int i=0; i < Direction.NUM_DIRECTIONS.ordinal(); i++) {
+			animations[State.MOVING.ordinal()][i] = new Animation(0.1f, new TextureRegion[]{
+					new TextureRegion(this.spriteSheet, 0 * w, i*h +i, w, h),
+					new TextureRegion(this.spriteSheet, 1 * w +1, i*h +i, w, h),
+					new TextureRegion(this.spriteSheet, 2 * w +2, i*h +i, w, h),
+					new TextureRegion(this.spriteSheet, 1 * w +1, i*h +i, w, h),
+			});
+		}
+
+		// Dead
+		TextureRegion[] deadFrames = new TextureRegion[] {
+				new TextureRegion(this.spriteSheet, 0, 0, w, h),
+		};
+		animations[State.DEAD.ordinal()][Direction.RIGHT.ordinal()] = new Animation(0.5f, deadFrames);
+		animations[State.DEAD.ordinal()][Direction.UP.ordinal()] = new Animation(0.5f, deadFrames);
+		animations[State.DEAD.ordinal()][Direction.LEFT.ordinal()] = new Animation(0.5f, deadFrames);
+		animations[State.DEAD.ordinal()][Direction.DOWN.ordinal()] = new Animation(0.5f, deadFrames);
 	}
 
 	public void dispose() {

@@ -10,7 +10,7 @@ public class WinScene extends KeyWaitScene {
 	public static final String WIN_BG = "youwin.png";
 
 	public WinScene() {
-		super(WIN_BG, MainGame.GameState.TITLE);
+		super(WIN_BG, new TitleScene());
 		this.clearBlack = true;
 	}
 }

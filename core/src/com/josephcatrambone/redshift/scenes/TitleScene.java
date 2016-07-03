@@ -11,10 +11,10 @@ public class TitleScene extends KeyWaitScene {
 	public static boolean SEEN_ONCE = false; // Terrible ass-shit hat to do an instruction scene.
 
 	public TitleScene() {
-		super(TITLE_BG, MainGame.GameState.PLAY);
+		super(TITLE_BG, new PlayScene());
 		if(!SEEN_ONCE) {
 			SEEN_ONCE = true;
-			this.nextState = MainGame.GameState.HOW_TO_PLAY;
+			this.nextScene = new HowToPlayScene();
 		}
 		this.clearBlack = false;
 	}

@@ -10,9 +10,12 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.josephcatrambone.redshift.Level;
 import com.josephcatrambone.redshift.MainGame;
+import com.josephcatrambone.redshift.actors.NPC;
 import com.josephcatrambone.redshift.actors.Pawn;
 import com.josephcatrambone.redshift.actors.Player;
 import com.josephcatrambone.redshift.handlers.RegionContactListener;
+
+import java.util.ArrayList;
 
 /**
  * Created by Jo on 12/20/2015.
@@ -23,6 +26,7 @@ public class PlayScene extends Scene {
 	Camera camera;
 	Level level;
 	Player player;
+	ArrayList<NPC> npcs;
 	float sceneChangeDelay = 2.5f;
 
 	RegionContactListener regionContactListener;
@@ -49,6 +53,12 @@ public class PlayScene extends Scene {
 
 		player = new Player(level.getPlayerStartX(), level.getPlayerStartY());
 		stage.addActor(player);
+
+		// Spawn an NPC
+		npcs = new ArrayList<NPC>();
+		NPC npc = new NPC(150, 150);
+		stage.addActor(npc);
+		npcs.add(npc);
 
 		// Global input listener if needed.
 		stage.addListener(player.getInputListener());
@@ -80,7 +90,7 @@ public class PlayScene extends Scene {
 
 		// Reached the goal?
 		if(regionContactListener.reachedGoal) {
-			MainGame.switchState((MainGame.GameState.WIN));
+			MainGame.switchState(new WinScene());
 		}
 
 		// Touch teleporter?
@@ -96,7 +106,14 @@ public class PlayScene extends Scene {
 		if(player.state == Pawn.State.DEAD) {
 			sceneChangeDelay -= deltaTime;
 			if(sceneChangeDelay < 0) {
-				MainGame.switchState(MainGame.GameState.GAME_OVER);
+				MainGame.switchState(new GameOverScene());
+			}
+		}
+
+		// Does any NPC see the player?
+		for(NPC npc : npcs) {
+			if(npc.inConeOfVision(player.getX(), player.getY())) {
+				System.out.println("NPC sees you! " + System.currentTimeMillis());
 			}
 		}
 
