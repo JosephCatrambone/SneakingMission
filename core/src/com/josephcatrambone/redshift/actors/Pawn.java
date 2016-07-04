@@ -82,7 +82,7 @@ public class Pawn extends Actor {
 		// TODO: Hard-coding animations blows.
 		// Idle
 		int w = 16;
-		int h = 24;
+		int h = 32;
 		// Right up left down.
 		for(int i=0; i < Direction.NUM_DIRECTIONS.ordinal(); i++) {
 			animations[State.IDLE.ordinal()][i] = new Animation(0.1f, new TextureRegion[]{
@@ -93,10 +93,10 @@ public class Pawn extends Actor {
 		// Moving
 		for(int i=0; i < Direction.NUM_DIRECTIONS.ordinal(); i++) {
 			animations[State.MOVING.ordinal()][i] = new Animation(0.1f, new TextureRegion[]{
-					new TextureRegion(this.spriteSheet, 0 * w, i*h +i, w, h),
-					new TextureRegion(this.spriteSheet, 1 * w +1, i*h +i, w, h),
-					new TextureRegion(this.spriteSheet, 2 * w +2, i*h +i, w, h),
-					new TextureRegion(this.spriteSheet, 1 * w +1, i*h +i, w, h),
+					new TextureRegion(this.spriteSheet, 0 * w, i*h, w, h),
+					new TextureRegion(this.spriteSheet, 1 * w, i*h, w, h),
+					new TextureRegion(this.spriteSheet, 2 * w, i*h, w, h),
+					new TextureRegion(this.spriteSheet, 1 * w, i*h, w, h),
 			});
 		}
 

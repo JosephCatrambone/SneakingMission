@@ -20,7 +20,7 @@ public class Player extends Pawn {
 	public static final String PLAYER_USER_DATA = "player";
 	public float walkSpeed = 6.5f;
 
-	public static final String SPRITESHEET = "dude.png";
+	public static final String SPRITESHEET = "oldman.png"; // 64x128.  16 wide, 32 tall, aligned with bottom.
 
 	public static final String PLAYER_COOLDOWN = "cooldown.wav";
 	private Sound cooldown = null;

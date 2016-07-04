@@ -122,6 +122,9 @@ public class PlayScene extends Scene {
 		if(Gdx.input.isKeyJustPressed(Input.Keys.P)) {
 			npcs.get(0).setWaypoints(level.getPath(npcs.get(0).getX(), npcs.get(0).getY(), player.getX(), player.getY()), true);
 		}
+		if(Gdx.input.isKeyJustPressed(Input.Keys.O)) {
+			MainGame.pushState(new CodecScene("codecs.json"));
+		}
 
 		// Camera follows player?
 		camera.position.set(player.getX(), player.getY(), camera.position.z);

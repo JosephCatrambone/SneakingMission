@@ -13,6 +13,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.josephcatrambone.redshift.actors.Pawn;
 
 import java.util.*;
 
@@ -233,11 +234,19 @@ public class Level {
 		int gy = (int)(goalY / collisionLayer.getTileHeight());
 
 		// Run A*.
-		// TODO: We're doing an O(n) search through the list of candidates. Switch to priority queue and write comparator.
-		LinkedList<MapCandidatePoint> candidates = new LinkedList<MapCandidatePoint>();
+		PriorityQueue<MapCandidatePoint> candidates = new PriorityQueue<MapCandidatePoint>(new Comparator<MapCandidatePoint>() {
+			@Override
+			public int compare(MapCandidatePoint o1, MapCandidatePoint o2) {
+				if(o1.cost+o1.minDistanceToGoal < o2.cost+o2.minDistanceToGoal) {
+					return -1;
+				} else if(o1.cost+o1.minDistanceToGoal > o2.cost+o2.minDistanceToGoal) {
+					return +1;
+				} else {
+					return 0;
+				}
+			}
+		});
 		int[] parents = new int[collisionLayer.getWidth()*collisionLayer.getHeight()]; // -1 means no parent.
-		float[] costs = new float[collisionLayer.getWidth()*collisionLayer.getHeight()];
-		int previousPoint = -1;
 		int startId = sx+sy*mapWidth;
 		int goalId = gx+gy*mapWidth;
 
@@ -247,21 +256,7 @@ public class Level {
 
 		while(!candidates.isEmpty()) {
 			// Go through and get the best candidate.
-			// TODO: See above.  Use priority queue to speed this up.
-			float bestDistance = Float.POSITIVE_INFINITY;
-			MapCandidatePoint bestCandidate = null;
-			for(MapCandidatePoint c : candidates) {
-				if(c.cost + c.minDistanceToGoal < bestDistance) {
-					bestCandidate = c;
-					bestDistance = c.cost + c.minDistanceToGoal;
-				}
-			}
-			candidates.remove(bestCandidate); // Pop.
-
-			// Mark our parent and cost so far.
-			parents[bestCandidate.id] = previousPoint;
-			previousPoint = bestCandidate.id;
-			costs[bestCandidate.id] = bestCandidate.cost;
+			MapCandidatePoint bestCandidate = candidates.poll();
 
 			// Are we at the goal?
 			if(bestCandidate.id == goalId) {
@@ -274,22 +269,17 @@ public class Level {
 			int nextId = 0;
 			int x = bestCandidate.id%mapWidth;
 			int y = bestCandidate.id/mapWidth;
+			int[] cos = new int[]{1, 0, -1, 0};
+			int[] sin = new int[]{0, 1, 0, -1};
 			// Don't revisit these.
-			nextId = (x+1)+y*mapWidth;
-			if(parents[nextId] == 0 && collisionLayer.getCell(x+1, y) == null) {
-				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x + 1 - gx) + Math.abs(y - gy)));
-			}
-			nextId = x+(y+1)*mapWidth;
-			if(parents[nextId] == 0 && collisionLayer.getCell(x, y+1) == null) {
-				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - gx) + Math.abs(y + 1 - gy)));
-			}
-			nextId = (x-1)+y*mapWidth;
-			if(parents[nextId] == 0 && collisionLayer.getCell(x-1, y) == null) {
-				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - 1 - gx) + Math.abs(y - gy)));
-			}
-			nextId = x+(y-1)*mapWidth;
-			if(parents[nextId] == 0 && collisionLayer.getCell(x, y-1) == null) {
-				candidates.push(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(x - gx) + Math.abs(y - 1 - gy)));
+			for(int i=0; i < Pawn.Direction.NUM_DIRECTIONS.ordinal(); i++) {
+				int dx = x+cos[i];
+				int dy = y+sin[i];
+				nextId = dx+dy*mapWidth;
+				if(parents[nextId] == 0 && collisionLayer.getCell(dx, dy) == null) {
+					parents[nextId] = bestCandidate.id;
+					candidates.add(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(gx-dx) + Math.abs(gy-dy)));
+				}
 			}
 		}
 
@@ -303,12 +293,12 @@ public class Level {
 
 			LinkedList<Vector2> tempPath = new LinkedList<Vector2>(); // A double-linked list.
 			int currentId = goalId;
-			while(currentId != -1) { // TODO: Should we check for -1 here?
+			while(currentId != -1 && parents[currentId] != currentId && currentId != startId) { // TODO: Should we check for -1 here?
 				// Convert to world space.
 				int x = currentId%mapWidth;
 				int y = currentId/mapWidth;
 				// The 0.5 is a half-tile width so we go to the center of the tile.
-				tempPath.push(new Vector2(x*collisionLayer.getTileWidth() + (collisionLayer.getTileWidth()*0.5f), y*collisionLayer.getTileHeight() + (collisionLayer.getTileHeight()*0.5f)));
+				tempPath.push(new Vector2(x*collisionLayer.getTileWidth(), y*collisionLayer.getTileHeight()));
 				currentId = parents[currentId];
 			}
 			// Convert our list into an array and reverse it.

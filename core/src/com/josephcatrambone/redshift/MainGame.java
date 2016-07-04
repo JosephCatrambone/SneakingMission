@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.physics.box2d.World;
 import com.josephcatrambone.redshift.actors.NPC;
 import com.josephcatrambone.redshift.actors.Player;
@@ -43,6 +44,10 @@ public class MainGame extends ApplicationAdapter {
 
 	public void loadAllAssets() {
 		assetManager.load("missing.png", Texture.class);
+		assetManager.load("codec.fnt", BitmapFont.class);
+		assetManager.load("codec.png", Texture.class);
+		assetManager.load("grandpa2_codec.png", Texture.class);
+		assetManager.load("grandma2_codec.png", Texture.class);
 		assetManager.load(Player.SPRITESHEET, Texture.class);
 		assetManager.load(NPC.SPRITESHEET, Texture.class);
 		assetManager.load(Player.PLAYER_COOLDOWN, Sound.class);
@@ -55,7 +60,7 @@ public class MainGame extends ApplicationAdapter {
 	}
 
 	public static void popState() {
-		if(scenes.isEmpty()) {
+		if(!scenes.isEmpty()) {
 			scenes.pop().dispose();
 		}
 	}
