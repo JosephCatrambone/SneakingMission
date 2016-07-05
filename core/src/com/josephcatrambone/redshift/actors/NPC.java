@@ -17,7 +17,7 @@ public class NPC extends Pawn {
 	public static final String NPC_USER_DATA = "pawn";
 	public float walkSpeed = 5.9f; // Slightly faster than the player.
 
-	public static final String SPRITESHEET = "dude.png";
+	public static final String SPRITESHEET = "orderly.png";
 
 	public static final String NPC_ALERT = "alert.wav";
 	private Sound alert = null;

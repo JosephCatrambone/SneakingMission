@@ -55,11 +55,16 @@ public class PlayScene extends Scene {
 		player = new Player(level.getPlayerStartX(), level.getPlayerStartY());
 		stage.addActor(player);
 
-		// Spawn an NPC
+		// Spawn NPCs.
 		npcs = new ArrayList<NPC>();
-		NPC npc = new NPC(150, 450);
-		stage.addActor(npc);
-		npcs.add(npc);
+		for(int i=0; i < level.getNPCCount(); i++) {
+			Vector2 pos = level.getNPCSpawnPoint(i);
+			NPC npc = new NPC((int)pos.x, (int)pos.y);
+			npc.direction = level.getNPCDirection(i);
+			npc.setWaypoints(level.getNPCWaypoints(i), false);
+			stage.addActor(npc);
+			npcs.add(npc);
+		}
 
 		// Global input listener if needed.
 		stage.addListener(player.getInputListener());

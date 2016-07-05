@@ -28,12 +28,18 @@ public class Level {
 	public static final String COLLISION_LAYER = "collision";
 	public static final String TRIGGER_LAYER = "trigger";
 	public static final String TELEPORT_TYPE = "teleport";
+	public static final String NPC_TYPE = "npc";
+	public static final String WAYPOINT_TYPE = "waypoint";
 	public static final String GOAL_TYPE = "goal";
 	public static final String PLAYER_START_X_PROPERTY = "playerStartX";
 	public static final String PLAYER_START_Y_PROPERTY = "playerStartY";
 	TiledMap map;
 	TiledMapRenderer renderer;
 	Body collision;
+
+	// TODO: This NPC stuff is a little messy.  We might be better with explicit classes.
+	private ArrayList<NPCData> npcData; // Used to store spawn points with metadata.
+	private HashMap<String,ArrayList<Vector2>> waypointSets; // Name -> Waypoints.
 
 	public Level() {}
 	public Level(String filename) {
@@ -76,9 +82,12 @@ public class Level {
 		}
 
 		// Build the triggers.
+		npcData = new ArrayList<NPCData>();
+		waypointSets = new HashMap< String,ArrayList<Vector2> >();
 		MapObjects mapObjects = map.getLayers().get(TRIGGER_LAYER).getObjects();
 		// First, make the rectangle colliders.
 		for(RectangleMapObject rob : mapObjects.getByType(RectangleMapObject.class)) {
+			boolean createFixture = true;
 			// Boxes come back in pixel coordinates, not map coordinates.
 			PolygonShape shape = new PolygonShape();
 			Rectangle r = rob.getRectangle(); // Rekt? Not rekt?
@@ -90,8 +99,6 @@ public class Level {
 			shape.set(new float[]{ // Assumes exterior is right hand of each line in XY order.  CCW winding.
 				x/PPM, y/PPM, (x+w)/PPM, (y)/PPM, (x+w)/PPM, (y+h)/PPM, (x)/PPM, (y+h)/PPM
 			});
-			FixtureDef fdef = new FixtureDef();
-			fdef.shape = shape;
 
 			// Is this a cooling area or a collision or a teleporter or a trigger?
 			HashMap <String, String> fixtureData = new HashMap<String,String>();
@@ -99,15 +106,43 @@ public class Level {
 			// TODO: Fucking bullshit for(String key : rob.getProperties() doesn't work despite MapProperties implementing iter.
 			while(stringIterator.hasNext()) {
 				String key = stringIterator.next();
-				fixtureData.put(key, (String)rob.getProperties().get(key).toString());
-				if(key.equals(TELEPORT_TYPE) || key.equals(GOAL_TYPE)) {
-					fdef.isSensor = true;
+				String value = rob.getProperties().get(key).toString(); // TODO: Actually get the class type.
+				fixtureData.put(key, (String)value);
+				if(value.equals(TELEPORT_TYPE) || value.equals(GOAL_TYPE)) {
+					createFixture = true; // In this part, if we're creating a fixture, we're creating a sensor.
+				} else if(value.equals(NPC_TYPE)) {
+					createFixture = false;
+					// Create the rest of the NPC data.
+					NPCData npcd = new NPCData();
+					// Remap to world space.
+					npcd.position = new Vector2(rob.getProperties().get("x", Float.class), rob.getProperties().get("y", Float.class));
+					npcd.direction = Pawn.Direction.values()[Integer.parseInt(rob.getProperties().get("direction", "0", String.class))];
+					npcd.waypointSet = rob.getProperties().get("waypoint_set_name", "", String.class);
+					npcData.add(npcd);
+				} else if(value.equals(WAYPOINT_TYPE)) {
+					String waypointSetName = rob.getProperties().get("waypoint_set_name", String.class);
+					int id = Integer.parseInt(rob.getProperties().get("waypoint_id", String.class));
+					Vector2 pos = new Vector2(rob.getProperties().get("x", Float.class), rob.getProperties().get("y", Float.class));
+					ArrayList<Vector2> waypoints = null;
+					if(!waypointSets.containsKey(waypointSetName)) {
+						waypoints = new ArrayList<Vector2>();
+						waypointSets.put(waypointSetName, waypoints);
+					} else {
+						waypoints = waypointSets.get(waypointSetName);
+					}
+					waypoints.add(id, pos); // TODO: We should set so we don't push around IDs by accident.
 				}
 			}
 
-			Fixture f = collision.createFixture(fdef);
-			//collision.setUserData(type);
-			f.setUserData(fixtureData);
+			// If we're making a trigger, actually create the fixture definition.
+			if(createFixture) {
+				FixtureDef fdef = new FixtureDef();
+				fdef.shape = shape;
+				fdef.isSensor = true;
+				Fixture f = collision.createFixture(fdef);
+				//collision.setUserData(type);
+				f.setUserData(fixtureData);
+			}
 		}
 		for(PolygonMapObject pob : mapObjects.getByType(PolygonMapObject.class)) {
 			// TODO: Poly support.
@@ -219,7 +254,29 @@ public class Level {
 		// y-down in the map, so flip.
 		return Integer.parseInt(map.getProperties().get(PLAYER_START_Y_PROPERTY, "0", String.class));
 		//(map.getProperties().get(MAP_HEIGHT_PROPERTY, 0, Integer.class) * map.getProperties().get(TILE_HEIGHT_PROPERTY, 0, Integer.class) - Integer.parseInt(map.getProperties().get(PLAYER_START_Y_PROPERTY, "0", String.class)));
+	}
 
+	public int getNPCCount() {
+		return npcData.size();
+	}
+
+	public Vector2 getNPCSpawnPoint(int id) {
+		return npcData.get(id).position;
+	}
+
+	public Pawn.Direction getNPCDirection(int id) {
+		return npcData.get(id).direction;
+	}
+
+	public Vector2[] getNPCWaypoints(int id) {
+		String waypointSetName = npcData.get(id).waypointSet;
+		if(waypointSetName.equals("") || !waypointSets.containsKey(waypointSetName)) {
+			return null;
+		}
+		ArrayList<Vector2> waypointArrayList = waypointSets.get(waypointSetName);
+		Vector2[] waypoints = new Vector2[waypointArrayList.size()];
+		waypointArrayList.toArray(waypoints);
+		return waypoints;
 	}
 
 	public Vector2[] getPath(float startX, float startY, float goalX, float goalY) {
@@ -233,17 +290,6 @@ public class Level {
 		int gy = (int)(goalY / collisionLayer.getTileHeight());
 		boolean[] visited = new boolean[collisionLayer.getWidth()*collisionLayer.getHeight()];
 		MapPoint goal = null;
-
-		char[] debugMap = new char[collisionLayer.getWidth()*collisionLayer.getHeight()];
-		for(int y=0; y < collisionLayer.getHeight(); y++) {
-			for(int x=0; x < collisionLayer.getWidth(); x++) {
-				if (collisionLayer.getCell(x, y) != null) {
-					debugMap[x+y*mapWidth] = 'X';
-				} else {
-					debugMap[x+y*mapWidth] = '_';
-				}
-			}
-		}
 
 		// Run A*.
 		PriorityQueue<MapPoint> candidates = new PriorityQueue<MapPoint>(new Comparator<MapPoint>() {
@@ -302,13 +348,14 @@ public class Level {
 
 			LinkedList<Vector2> tempPath = new LinkedList<Vector2>(); // A double-linked list.
 			MapPoint current = goal;
-			while(current != null) { // TODO: Should we check for -1 here?
+			float halfTileWidth = collisionLayer.getTileWidth()*0.5f;
+			float halfTileHeight = collisionLayer.getTileHeight()*0.5f;
+			while(current != null) {
 				// Convert to world space.
 				int x = current.x;
 				int y = current.y;
-				debugMap[x+y*mapWidth] = '*';
 				// The 0.5 is a half-tile width so we go to the center of the tile.
-				tempPath.push(new Vector2(x*collisionLayer.getTileWidth(), y*collisionLayer.getTileHeight()));
+				tempPath.push(new Vector2(x*collisionLayer.getTileWidth() + halfTileWidth, y*collisionLayer.getTileHeight() + halfTileHeight));
 				current = current.parent;
 			}
 			// Convert our list into an array and reverse it.
@@ -318,12 +365,6 @@ public class Level {
 			//java.util.Iterator<Vector2> iter = tempPath.descendingIterator();
 			for(Vector2 v : tempPath) {
 				path[i++] = v;
-			}
-
-			// DEBUG
-			for(i=0; i < debugMap.length; i++) {
-				System.out.print(debugMap[i]);
-				if((i+1)%collisionLayer.getWidth() == 0) { System.out.println(); }
 			}
 
 			return path;
@@ -339,5 +380,11 @@ public class Level {
 		MapPoint(int x, int y, float cost, float dist, MapPoint parent){
 			this.x = x; this.y = y; this.cost = cost; this.minDistanceToGoal = dist; this.parent = parent;
 		}
+	}
+
+	private class NPCData {
+		public Vector2 position;
+		public Pawn.Direction direction;
+		public String waypointSet; // wayspoint_set_name.  Picked because I don't want to get confused with 'path'.
 	}
 }
