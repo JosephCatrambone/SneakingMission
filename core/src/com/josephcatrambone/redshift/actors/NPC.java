@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.josephcatrambone.redshift.MainGame;
 
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Stack;
 
 /**
@@ -27,17 +28,20 @@ public class NPC extends Pawn {
 	private float sightLimit;
 
 	// For following waypoints.
-	public static final double epsilonWaypointDistance = 10.0; // If the NPC is less than this distance to the waypoint, ignore.
+	private Random random;
+	private boolean moveHorizontalFirst = false; // If we're moving towards an obstacle, do we move horizontal first?
+	private Vector2 previousPosition; // If we are in the same position as last frame and we have waypoints, we're stuck.
 	private Vector2[] waypoints;
 	private int currentWaypoint;
 	private boolean stopAtEnd;
 
 	public NPC(int x, int y) {
+		random = new Random();
 		this.fov = (float)Math.toRadians(30);
 		this.sightLimit = 60;
 		int w = 16;
 		int h = 24;
-		create(x, y, w/2, h/2, 1.0f, SPRITESHEET);
+		create(x, y, 4, 4, 1.0f, SPRITESHEET);
 
 		createDefaultAnimations();
 
@@ -70,7 +74,15 @@ public class NPC extends Pawn {
 				this.state = State.IDLE;
 				return; // Give up the rest of this action.
 			}
-			if(Math.abs(dx) >= Math.abs(dy)) { // Move horizontally.
+			// Check to see if we're stuck in the same place we were last round.
+			Vector2 currentPosition = new Vector2(this.getX(), this.getY());
+			if(currentPosition.epsilonEquals(previousPosition, 1e-6f)) {
+				System.out.println("NPC is stuck.");
+				moveHorizontalFirst = !moveHorizontalFirst; // Try to unstick ourselves.
+			}
+			previousPosition = currentPosition;
+			// Determine which way to go.
+			if(moveHorizontalFirst || Math.abs(dx) >= Math.abs(dy)) { // Move horizontally.
 				if(dx > 0) {
 					this.direction = Direction.RIGHT;
 				} else if(dx < 0) {
@@ -87,7 +99,7 @@ public class NPC extends Pawn {
 			}
 
 			// Can we pop this waypoint?
-			if(Math.sqrt(dx*dx + dy*dy) < epsilonWaypointDistance) {
+			if(Math.abs(dx)+Math.abs(dy) < walkSpeed) {
 				currentWaypoint++;
 				if(currentWaypoint >= waypoints.length) {
 					if(stopAtEnd) {
@@ -131,16 +143,16 @@ public class NPC extends Pawn {
 		// bx cx | t1 = dx
 		// by cy | t2   dy
 
-		double derivative = bx*cy-cx*by;
-		if(derivative == 0) {
+		double determinant = bx*cy-cx*by;
+		if(determinant == 0) {
 			return false;
 		}
 
 		// bx dx
 		// by dy | t2
 
-		double t1 = (dx*cy - cx*dy) / derivative;
-		double t2 = (bx*dy - dx*by) / derivative;
+		double t1 = (dx*cy - cx*dy) / determinant;
+		double t2 = (bx*dy - dx*by) / determinant;
 
 		return (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1 && t2+t2 <= 1);
 	}

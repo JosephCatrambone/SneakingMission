@@ -8,14 +8,21 @@ import com.josephcatrambone.redshift.MainGame;
 public class TitleScene extends KeyWaitScene {
 
 	public static final String TITLE_BG = "title.png";
-	public static boolean SEEN_ONCE = false; // Terrible ass-shit hat to do an instruction scene.
+	public static boolean seenIntroCodec = false;
 
 	public TitleScene() {
 		super(TITLE_BG, new PlayScene());
-		if(!SEEN_ONCE) {
-			SEEN_ONCE = true;
-			this.nextScene = new HowToPlayScene();
-		}
 		this.clearBlack = false;
+	}
+
+	@Override
+	public void nextScene() {
+		if(seenIntroCodec == false) {
+			seenIntroCodec = true;
+			MainGame.pushState(new PlayScene());
+			MainGame.pushState(new CodecScene("codec_intro.json"));
+		} else {
+			MainGame.pushState(new PlayScene());
+		}
 	}
 }

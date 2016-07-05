@@ -41,9 +41,7 @@ public class RegionContactListener implements ContactListener {
 			} // TODO: We assume player never self-collides.
 
 			if(playerData != null) {
-				if(objData.get("type").equals(Level.COOL_TYPE)) {
-					playerCooling = true;
-				} else if(objData.get("type").equals(Level.TELEPORT_TYPE)) {
+				if(objData.get("type").equals(Level.TELEPORT_TYPE)) {
 					teleportX = Integer.parseInt(objData.get("teleportx"));
 					teleportY = Integer.parseInt(objData.get("teleporty"));
 					if(objData.containsKey("teleportmap")) {
@@ -77,11 +75,6 @@ public class RegionContactListener implements ContactListener {
 				objData = ad;
 			} // TODO: We assume player never self-collides.
 
-			if(playerData != null) {
-				if(objData.get("type").equals(Level.COOL_TYPE)) {
-					playerCooling = false;
-				}
-			}
 		}
 	}
 

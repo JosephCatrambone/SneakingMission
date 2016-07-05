@@ -27,7 +27,6 @@ public class Level {
 	public static final int[] OVERLAY_LAYERS = new int[]{2};
 	public static final String COLLISION_LAYER = "collision";
 	public static final String TRIGGER_LAYER = "trigger";
-	public static final String COOL_TYPE = "cool";
 	public static final String TELEPORT_TYPE = "teleport";
 	public static final String GOAL_TYPE = "goal";
 	public static final String PLAYER_START_X_PROPERTY = "playerStartX";
@@ -101,7 +100,7 @@ public class Level {
 			while(stringIterator.hasNext()) {
 				String key = stringIterator.next();
 				fixtureData.put(key, (String)rob.getProperties().get(key).toString());
-				if(key.equals(COOL_TYPE) || key.equals(TELEPORT_TYPE) || key.equals(GOAL_TYPE)) {
+				if(key.equals(TELEPORT_TYPE) || key.equals(GOAL_TYPE)) {
 					fdef.isSensor = true;
 				}
 			}
@@ -232,11 +231,24 @@ public class Level {
 		int sy = (int)(startY / collisionLayer.getTileHeight());
 		int gx = (int)(goalX / collisionLayer.getTileWidth());
 		int gy = (int)(goalY / collisionLayer.getTileHeight());
+		boolean[] visited = new boolean[collisionLayer.getWidth()*collisionLayer.getHeight()];
+		MapPoint goal = null;
+
+		char[] debugMap = new char[collisionLayer.getWidth()*collisionLayer.getHeight()];
+		for(int y=0; y < collisionLayer.getHeight(); y++) {
+			for(int x=0; x < collisionLayer.getWidth(); x++) {
+				if (collisionLayer.getCell(x, y) != null) {
+					debugMap[x+y*mapWidth] = 'X';
+				} else {
+					debugMap[x+y*mapWidth] = '_';
+				}
+			}
+		}
 
 		// Run A*.
-		PriorityQueue<MapCandidatePoint> candidates = new PriorityQueue<MapCandidatePoint>(new Comparator<MapCandidatePoint>() {
+		PriorityQueue<MapPoint> candidates = new PriorityQueue<MapPoint>(new Comparator<MapPoint>() {
 			@Override
-			public int compare(MapCandidatePoint o1, MapCandidatePoint o2) {
+			public int compare(MapPoint o1, MapPoint o2) {
 				if(o1.cost+o1.minDistanceToGoal < o2.cost+o2.minDistanceToGoal) {
 					return -1;
 				} else if(o1.cost+o1.minDistanceToGoal > o2.cost+o2.minDistanceToGoal) {
@@ -246,45 +258,42 @@ public class Level {
 				}
 			}
 		});
-		int[] parents = new int[collisionLayer.getWidth()*collisionLayer.getHeight()]; // -1 means no parent.
-		int startId = sx+sy*mapWidth;
-		int goalId = gx+gy*mapWidth;
 
 		// Push the start onto the stack.
-		parents[startId] = -1;
-		candidates.add(new MapCandidatePoint(startId, 0, Math.abs(sx-gx)+Math.abs(sy-gy)));
+		candidates.add(new MapPoint(sx, sy, 0, Math.abs(sx-gx)+Math.abs(sy-gy), null));
+		visited[sx+sy*mapWidth] = true;
 
 		while(!candidates.isEmpty()) {
 			// Go through and get the best candidate.
-			MapCandidatePoint bestCandidate = candidates.poll();
+			MapPoint bestCandidate = candidates.poll();
+			visited[bestCandidate.x+bestCandidate.y*mapWidth] = true;
 
 			// Are we at the goal?
-			if(bestCandidate.id == goalId) {
+			if(bestCandidate.x == gx && bestCandidate.y == gy) {
 				// Handle it.
+				goal = bestCandidate;
 				break;
 			}
 
 			// Add the neighbors of this position with their costs.
 			// Right up left down.
-			int nextId = 0;
-			int x = bestCandidate.id%mapWidth;
-			int y = bestCandidate.id/mapWidth;
 			int[] cos = new int[]{1, 0, -1, 0};
 			int[] sin = new int[]{0, 1, 0, -1};
 			// Don't revisit these.
 			for(int i=0; i < Pawn.Direction.NUM_DIRECTIONS.ordinal(); i++) {
-				int dx = x+cos[i];
-				int dy = y+sin[i];
-				nextId = dx+dy*mapWidth;
-				if(parents[nextId] == 0 && collisionLayer.getCell(dx, dy) == null) {
-					parents[nextId] = bestCandidate.id;
-					candidates.add(new MapCandidatePoint(nextId, bestCandidate.cost + 1, Math.abs(gx-dx) + Math.abs(gy-dy)));
+				int dx = bestCandidate.x+cos[i];
+				int dy = bestCandidate.y+sin[i];
+				if(dx < 0 || dy < 0 || dx >= collisionLayer.getWidth() || dy >= collisionLayer.getHeight()) {
+					continue;
+				}
+				if(!visited[dx+dy*mapWidth] && collisionLayer.getCell(dx, dy) == null) {
+					candidates.add(new MapPoint(dx, dy, bestCandidate.cost + 1, Math.abs(gx-dx) + Math.abs(gy-dy), bestCandidate));
 				}
 			}
 		}
 
 		// If the goal has no parent, there's no path.
-		if(parents[goalId] == -1) {
+		if(goal == null) {
 			return null;
 		} else {
 			// Convert each of the parents to real-world coordinates, then push it onto the stack.
@@ -292,14 +301,15 @@ public class Level {
 			Vector2[] path = null;
 
 			LinkedList<Vector2> tempPath = new LinkedList<Vector2>(); // A double-linked list.
-			int currentId = goalId;
-			while(currentId != -1 && parents[currentId] != currentId && currentId != startId) { // TODO: Should we check for -1 here?
+			MapPoint current = goal;
+			while(current != null) { // TODO: Should we check for -1 here?
 				// Convert to world space.
-				int x = currentId%mapWidth;
-				int y = currentId/mapWidth;
+				int x = current.x;
+				int y = current.y;
+				debugMap[x+y*mapWidth] = '*';
 				// The 0.5 is a half-tile width so we go to the center of the tile.
 				tempPath.push(new Vector2(x*collisionLayer.getTileWidth(), y*collisionLayer.getTileHeight()));
-				currentId = parents[currentId];
+				current = current.parent;
 			}
 			// Convert our list into an array and reverse it.
 			path = new Vector2[tempPath.size()];
@@ -309,16 +319,25 @@ public class Level {
 			for(Vector2 v : tempPath) {
 				path[i++] = v;
 			}
+
+			// DEBUG
+			for(i=0; i < debugMap.length; i++) {
+				System.out.print(debugMap[i]);
+				if((i+1)%collisionLayer.getWidth() == 0) { System.out.println(); }
+			}
+
 			return path;
 		}
 	}
 
-	private class MapCandidatePoint {
-		public int id;
+	private class MapPoint {
+		public int x;
+		public int y;
 		public float cost;
 		public float minDistanceToGoal;
-		MapCandidatePoint(int id, float cost, float dist){
-			this.id = id; this.cost = cost; this.minDistanceToGoal = dist;
+		public MapPoint parent;
+		MapPoint(int x, int y, float cost, float dist, MapPoint parent){
+			this.x = x; this.y = y; this.cost = cost; this.minDistanceToGoal = dist; this.parent = parent;
 		}
 	}
 }

@@ -32,7 +32,8 @@ public class MainGame extends ApplicationAdapter {
 	public void create () {
 		loadAllAssets();
 
-		switchState(new IntroScene());
+		//switchState(new IntroScene());
+		switchState(new PlayScene());
 	}
 
 	@Override
@@ -44,8 +45,9 @@ public class MainGame extends ApplicationAdapter {
 
 	public void loadAllAssets() {
 		assetManager.load("missing.png", Texture.class);
-		assetManager.load("codec.fnt", BitmapFont.class);
 		assetManager.load("codec.png", Texture.class);
+		assetManager.load("codec.fnt", BitmapFont.class);
+		assetManager.load("radio.png", Texture.class);
 		assetManager.load("grandpa2_codec.png", Texture.class);
 		assetManager.load("grandma2_codec.png", Texture.class);
 		assetManager.load(Player.SPRITESHEET, Texture.class);
@@ -53,7 +55,6 @@ public class MainGame extends ApplicationAdapter {
 		assetManager.load(Player.PLAYER_COOLDOWN, Sound.class);
 		assetManager.load(IntroScene.INTRO_BG, Texture.class);
 		assetManager.load(TitleScene.TITLE_BG, Texture.class);
-		assetManager.load(HowToPlayScene.HOW_TO_PLAY, Texture.class);
 		assetManager.load(GameOverScene.GAME_OVER_BG, Texture.class);
 		assetManager.load(WinScene.WIN_BG, Texture.class);
 		assetManager.finishLoading();

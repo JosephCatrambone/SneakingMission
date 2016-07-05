@@ -57,7 +57,11 @@ public class KeyWaitScene extends Scene {
 	@Override
 	public void update(float deltaTime) {
 		if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY)) {
-			MainGame.switchState(nextScene);
+			nextScene();
 		}
+	}
+
+	public void nextScene() {
+		MainGame.switchState(nextScene);
 	}
 }

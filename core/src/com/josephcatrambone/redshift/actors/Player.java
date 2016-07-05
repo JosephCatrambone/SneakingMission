@@ -26,7 +26,7 @@ public class Player extends Pawn {
 	private Sound cooldown = null;
 
 	public Player(int x, int y) {
-		create(x, y, 8, 8, 1.0f, SPRITESHEET);
+		create(x, y, 6, 6, 1.0f, SPRITESHEET);
 
 		createDefaultAnimations();
 

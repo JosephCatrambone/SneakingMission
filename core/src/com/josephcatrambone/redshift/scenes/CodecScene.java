@@ -27,7 +27,7 @@ public class CodecScene extends Scene {
 	SpriteBatch batch;
 	Camera camera;
 	BitmapFont font;
-	Texture bg;
+	Texture radio;
 	Texture leftImage;
 	Texture rightImage;
 	boolean keyWasPressed;
@@ -37,7 +37,7 @@ public class CodecScene extends Scene {
 	public CodecScene(String codecSequenceName) {
 		this.keyWasPressed = false;
 		// TODO: Replace the hard-coding with codec squence loading.
-		backgroundImageFilename = "codec.png";
+		backgroundImageFilename = "radio.png";
 		clearBlack = true;
 
 		Json json = new Json();
@@ -54,10 +54,10 @@ public class CodecScene extends Scene {
 	@Override
 	public void create() {
 		font = MainGame.assetManager.get(CodecScene.FONT_FILENAME, BitmapFont.class);
-		bg = MainGame.assetManager.get(this.backgroundImageFilename);
+		radio = MainGame.assetManager.get(this.backgroundImageFilename);
 		leftImage = MainGame.assetManager.get(this.leftImageFilename);
 		rightImage = MainGame.assetManager.get(this.rightImageFilename);
-		camera = new OrthographicCamera(bg.getWidth(), bg.getHeight());
+		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		batch = new SpriteBatch();
 		camera.update();
 
@@ -80,7 +80,7 @@ public class CodecScene extends Scene {
 		Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
 		batch.begin();
-		batch.draw(bg, 0, 0, bg.getWidth(), bg.getHeight());
+		batch.draw(radio, (Gdx.graphics.getWidth()-radio.getWidth())*0.5f, Gdx.graphics.getHeight()-radio.getHeight()-10f);
 		batch.draw(leftImage, 10, Gdx.graphics.getHeight()-leftImage.getHeight()-10);
 		batch.draw(rightImage, Gdx.graphics.getWidth()-rightImage.getWidth()-10, Gdx.graphics.getHeight()-rightImage.getHeight()-10);
 
