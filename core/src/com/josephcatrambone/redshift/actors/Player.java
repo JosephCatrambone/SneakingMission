@@ -22,15 +22,12 @@ public class Player extends Pawn {
 
 	public static final String SPRITESHEET = "oldman.png"; // 64x128.  16 wide, 32 tall, aligned with bottom.
 
-	public static final String PLAYER_COOLDOWN = "cooldown.wav";
-	private Sound cooldown = null;
+	//private Sound cooldown = null;
 
 	public Player(int x, int y) {
 		create(x, y, 6, 6, 1.0f, SPRITESHEET);
 
 		createDefaultAnimations();
-
-		cooldown = MainGame.assetManager.get(PLAYER_COOLDOWN);
 
 		// Always use first fixture for labelling contact data.
 		HashMap<String, String> fixtureData = new HashMap<String, String>();

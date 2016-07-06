@@ -23,6 +23,7 @@ import static com.josephcatrambone.redshift.PhysicsConstants.PPM;
  * Created by Jo on 12/22/2015.
  */
 public class Level {
+	public static final int MAX_RAYCAST_DISTANCE = 100;
 	public static final int[] BACKGROUND_LAYERS = new int[]{0, 1}; // Background + foreground.  No overlay yet.
 	public static final int[] OVERLAY_LAYERS = new int[]{2};
 	public static final String COLLISION_LAYER = "collision";
@@ -279,6 +280,12 @@ public class Level {
 		return waypoints;
 	}
 
+	private class NPCData {
+		public Vector2 position;
+		public Pawn.Direction direction;
+		public String waypointSet; // wayspoint_set_name.  Picked because I don't want to get confused with 'path'.
+	}
+
 	public Vector2[] getPath(float startX, float startY, float goalX, float goalY) {
 		// Returns an unoptimized list of squares in world coordinates which don't touch any blocked cells.
 		// Internally, this function will convert the start and goal to local squares, then solve with A*.
@@ -382,9 +389,45 @@ public class Level {
 		}
 	}
 
-	private class NPCData {
-		public Vector2 position;
-		public Pawn.Direction direction;
-		public String waypointSet; // wayspoint_set_name.  Picked because I don't want to get confused with 'path'.
+	public boolean isClearPath(float startX, float startY, float goalX, float goalY) {
+		// Returns true if there are no obstacles between the start and end, as determined by a conservative ray-cast.
+		// This will likely report NO sight more often than sight because we want to make it easier for the player.
+		TiledMapTileLayer collisionLayer = (TiledMapTileLayer)map.getLayers().get(COLLISION_LAYER);
+		int mapWidth = collisionLayer.getWidth();
+		int sx = (int)(startX / collisionLayer.getTileWidth());
+		int sy = (int)(startY / collisionLayer.getTileHeight());
+		int gx = (int)(goalX / collisionLayer.getTileWidth());
+		int gy = (int)(goalY / collisionLayer.getTileHeight());
+
+		int dx = gx-sx;
+		int dy = gy-sy;
+
+		if(dx == 0) { // Handle straight vertical.
+			if(dy == 0) { // Exact same tile.
+				return true;
+			} else { // Most cases of vertical lines.
+				dy /= Math.abs(dy); // Force dy to be +1 or -1.
+				while(sy != gy) {
+					if(collisionLayer.getCell(sx, sy) != null) {
+						return false;
+					}
+					sy += dy;
+				}
+				return true;
+			}
+		} else { // Handle remaining cases.
+			int iterationCount = 0; // Our safety in case our floats drift.  We're better off picking a different algo, but I'm lazy.
+			// y = mx+b.  We have y and x at the start.  We derive m.  Calculate b.  y-mx = b
+			float m = (float)dy/(float)dx;
+			float b = gy - m*gx;
+			while(sx != gx && sy != gy && iterationCount++ < MAX_RAYCAST_DISTANCE) {
+				sx += 1;
+				sy = (int)(m*sx + b);
+				if(collisionLayer.getCell(sx, sy) != null) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }

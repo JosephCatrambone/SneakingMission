@@ -2,10 +2,13 @@ package com.josephcatrambone.redshift.scenes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -26,21 +29,21 @@ public class PlayScene extends Scene {
 	Stage stage;
 	Camera camera;
 	Level level;
+	Music backgroundMusic;
 	Player player;
 	ArrayList<NPC> npcs;
 	float sceneChangeDelay = 2.5f;
 
 	RegionContactListener regionContactListener;
 
-	Box2DDebugRenderer debugRenderer;
-
 	@Override
 	public void create() {
 		MainGame.world = new World(new Vector2(0, 0), true);
 
+		// Set up drawing area.
 		stage = new Stage(new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight())); // Fit viewport = black bars.
-		debugRenderer = new Box2DDebugRenderer();
 
+		// Set up work physics.
 		regionContactListener = new RegionContactListener();
 		MainGame.world.setContactListener(regionContactListener);
 
@@ -50,11 +53,10 @@ public class PlayScene extends Scene {
 		((OrthographicCamera)camera).setToOrtho(false, PIXEL_DISPLAY_WIDTH, PIXEL_DISPLAY_WIDTH*invAspectRatio);
 		camera.update(true);
 
+		// Load map and add actors.
 		level = new Level("test.tmx");
-
 		player = new Player(level.getPlayerStartX(), level.getPlayerStartY());
 		stage.addActor(player);
-
 		// Spawn NPCs.
 		npcs = new ArrayList<NPC>();
 		for(int i=0; i < level.getNPCCount(); i++) {
@@ -65,6 +67,16 @@ public class PlayScene extends Scene {
 			stage.addActor(npc);
 			npcs.add(npc);
 		}
+
+		// If the background music is playing and it's not our default music, use that.
+		if(backgroundMusic == null) {
+			backgroundMusic = MainGame.assetManager.get("SneakingMission.ogg", Music.class);
+		}
+		if(backgroundMusic.isPlaying()) {
+			backgroundMusic.stop();
+		}
+		backgroundMusic.setLooping(true);
+		backgroundMusic.play();
 
 		// Global input listener if needed.
 		stage.addListener(player.getInputListener());
@@ -118,8 +130,10 @@ public class PlayScene extends Scene {
 
 		// Does any NPC see the player?
 		for(NPC npc : npcs) {
-			if(npc.inConeOfVision(player.getX(), player.getY())) {
-				System.out.println("NPC sees you! " + System.currentTimeMillis());
+			if(npc.inConeOfVision(player.getX(), player.getY())) { // Rough cone of vision.
+				if(level.isClearPath(npc.getX(), npc.getY(), player.getX(), player.getY())) {
+					npc.seesPlayerAt(player.getX(), player.getY());
+				}
 			}
 		}
 
