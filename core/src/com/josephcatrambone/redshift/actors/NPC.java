@@ -4,21 +4,16 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Vector2;
 import com.josephcatrambone.redshift.MainGame;
-import com.josephcatrambone.redshift.scenes.PlayScene;
 
 import java.util.HashMap;
-import java.util.Random;
-import java.util.Stack;
 
 /**
  * Created by josephcatrambone on 7/1/16.
  */
 public class NPC extends Pawn {
 	public static final float PATROL_SPEED = 3.0f;
-	public static final float INVESTIGATE_SPEED = 4.0f;
 	public static final float CHASE_SPEED = 7.0f;
 	public static final float REACTION_TIME = 0.5f;
-	public static final float INVESTIGATE_TIME = 10.0f;
 	public static final float ALERT_TIME = 5.0f;
 	public static final String NPC_USER_DATA = "pawn";
 	public float walkSpeed = 3.0f; // Our default.
@@ -38,7 +33,8 @@ public class NPC extends Pawn {
 	private Vector2 previousPosition; // If we are in the same position as last frame and we have waypoints, we're stuck.
 	private Vector2[] waypoints;
 	private Vector2[] previousWaypoints; // If we go into investigation mode, push our previous waypoints here.
-	private int currentWaypoint;
+	private int currentWaypointIndex;
+	private Vector2 currentWaypoint; // We make a copy of the one in the index so we can mess around with it.
 	private boolean stopAtEnd;
 
 	// For handling alert and pursuit.
@@ -71,38 +67,42 @@ public class NPC extends Pawn {
 
 		updatePosition();
 
-		// Logic for transitioning between states and seeking player.
-		if(sawPlayerFrameBeforeLast) {
-			if(alertTimer > 0) { // Are we in alert mode?  If so and we saw the player, lock this to the alert time.
-				alertTimer = ALERT_TIME;
+		updateAlertState(deltaTime);
+	}
 
-			} else if(investigateTimer > 0) {
-				spotTimer += deltaTime;
-				if(spotTimer > ALERT_TIME) {
-					alertTimer = ALERT_TIME;
-				}
-			} else {
-				spotTimer += deltaTime; //
-				if(spotTimer >= REACTION_TIME) { // We are in alert mode and have spotted the player.
-					alertTimer = ALERT_TIME;
-				} else { // We spotted the player but didn't react.  Investigate.
-					investigateTimer = INVESTIGATE_TIME; // Start investigating.
-				}
+	private void updateAlertState(float deltaTime) {
+		// Logic for transitioning between states and seeking player.
+		boolean transitioningAwayFromAlert = false;
+		if(sawPlayerFrameBeforeLast) {
+			spotTimer += deltaTime;
+			if(spotTimer > REACTION_TIME || alertTimer > 0) {
+				alertTimer = ALERT_TIME;
 			}
-		} else { // Player moved out of our cone of vision.
-			// If we are alerted, reduce our alert time.
-			if(alertTimer > 0) { alertTimer -= deltaTime; }
-			if(investigateTimer > 0) { investigateTimer -= deltaTime; }
-			spotTimer = 0;
-			if(investigateTimer <= 0 && alertTimer <= 0) {
-				alertTimer = 0;
-				investigateTimer = 0;
-				// Return to our previous state.
-				// TODO: Return to state.
+		} else {
+			// Are we transitioning away from the seen state?
+			transitioningAwayFromAlert = (spotTimer > 0 && spotTimer - deltaTime <= 0);
+
+			// Decrease our timers to zero at lest.
+			if(spotTimer > 0) {
+				spotTimer -= deltaTime;
+			}
+			if(alertTimer > 0) {
+				alertTimer -= deltaTime;
 			}
 		}
+		boolean isAlerted = alertTimer > 0;
 
-		// Now that we've figured out our timers, the 'see player' method will determine our action.
+		// Now that we know our state.
+		if(isAlerted) {
+			currentWaypoint = lastPlayerLocation;
+		} else if(transitioningAwayFromAlert) {
+			// We want to restore our last waypoint if it was set.
+			if(waypoints != null && waypoints.length > 0) {
+				currentWaypoint = waypoints[currentWaypointIndex];
+			} else {
+				currentWaypoint = null;
+			}
+		}
 
 		// Use for state tracking.
 		sawPlayerFrameBeforeLast = sawPlayerLastFrame;
@@ -110,18 +110,21 @@ public class NPC extends Pawn {
 	}
 
 	private void moveTowardsWaypoint() {
-		if(waypoints == null || waypoints.length == 0) { // If we have waypoints, move to our next one.
+		if(currentWaypoint == null) { // If we have waypoints, move to our next one.
 			this.state = State.IDLE;
+			if(waypoints != null && waypoints.length > 0) {
+				currentWaypoint = waypoints[currentWaypointIndex];
+			}
 		} else { // Select the next waypoint and decide to move towards it on the bigger axis.
 			this.state = State.MOVING;
 			double dx = 0;
 			double dy = 0;
 			try {
-				dx = waypoints[currentWaypoint].x - this.getX();
-				dy = waypoints[currentWaypoint].y - this.getY();
+				dx = currentWaypoint.x - this.getX();
+				dy = currentWaypoint.y - this.getY();
 			} catch(ArrayIndexOutOfBoundsException aioob) {
 				// TODO: Concurrent modification of the array list leads to an exception.  Fix the race condition.
-				currentWaypoint = 0;
+				currentWaypoint = null;
 				this.state = State.IDLE;
 				return; // Give up the rest of this action.
 			}
@@ -129,7 +132,9 @@ public class NPC extends Pawn {
 			Vector2 currentPosition = new Vector2(this.getX(), this.getY());
 			if(currentPosition.epsilonEquals(previousPosition, 1e-6f)) {
 				// DEBUG: NPC is stuck.
+				System.out.println("Stuck!");
 				moveHorizontalFirst = !moveHorizontalFirst; // Try to unstick ourselves.
+				currentWaypoint = new Vector2(currentWaypoint.x + (2.0f*MainGame.random.nextFloat()-1.0f), currentWaypoint.y + (2.0f*MainGame.random.nextFloat()-1.0f));
 			}
 			previousPosition = currentPosition;
 			// Determine which way to go.
@@ -151,12 +156,22 @@ public class NPC extends Pawn {
 
 			// Can we pop this waypoint?
 			if(Math.abs(dx)+Math.abs(dy) < walkSpeed) {
-				currentWaypoint++;
-				if(currentWaypoint >= waypoints.length) {
+				currentWaypointIndex++;
+
+				// Advance to next waypoint or, if there are none, set to null.
+				if(waypoints == null) {
+					currentWaypoint = null;
+				} else if(currentWaypointIndex >= waypoints.length) {
+					currentWaypointIndex = 0;
 					if(stopAtEnd) {
 						waypoints = null;
+						currentWaypoint = null;
+						waypoints = previousWaypoints;
+					} else {
+						currentWaypoint = waypoints[currentWaypointIndex];
 					}
-					currentWaypoint = 0;
+				} else {
+					currentWaypoint = waypoints[currentWaypointIndex];
 				}
 			}
 		}
@@ -216,7 +231,7 @@ public class NPC extends Pawn {
 	}
 
 	public void setWaypoints(Vector2[] wp, boolean stopAtEnd) {
-		this.currentWaypoint = 0;
+		this.currentWaypointIndex = 0;
 		this.waypoints = wp;
 		this.stopAtEnd = stopAtEnd;
 	}
