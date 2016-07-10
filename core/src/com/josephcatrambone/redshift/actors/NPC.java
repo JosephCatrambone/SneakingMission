@@ -3,9 +3,11 @@ package com.josephcatrambone.redshift.actors;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Vector2;
+import com.josephcatrambone.redshift.Level;
 import com.josephcatrambone.redshift.MainGame;
 
 import java.util.HashMap;
+import java.util.Stack;
 
 /**
  * Created by josephcatrambone on 7/1/16.
@@ -23,33 +25,21 @@ public class NPC extends Pawn {
 	public static final String NPC_ALERT = "alert.wav";
 	private Sound alert = null;
 
+	// State stack.
+	public Stack<NPCState> stateStack;
+
 	// For looking.
 	private float fov;
 	// rotation = super.getRotation OR Direction.
 	private float sightLimit;
 
 	// For following waypoints.
-	private boolean moveHorizontalFirst = false; // If we're moving towards an obstacle, do we move horizontal first?
-	private Vector2 previousPosition; // If we are in the same position as last frame and we have waypoints, we're stuck.
-	private Vector2[] waypoints;
-	private Vector2[] previousWaypoints; // If we go into investigation mode, push our previous waypoints here.
-	private int currentWaypointIndex;
-	private Vector2 currentWaypoint; // We make a copy of the one in the index so we can mess around with it.
-	private boolean stopAtEnd;
-
-	// For handling alert and pursuit.
-	private boolean sawPlayerFrameBeforeLast = false;
-	private boolean sawPlayerLastFrame = false;
-	private Vector2 lastPlayerLocation = null;
-	private float spotTimer = 0;
-	private float investigateTimer = 0;
-	private float alertTimer = 0;
+	private Level levelReference;
 
 	public NPC(int x, int y) {
 		this.fov = (float)Math.toRadians(35);
 		this.sightLimit = 200;
 		create(x, y, 4, 4, 1.0f, SPRITESHEET); // TINY hitbox.
-
 		createDefaultAnimations();
 
 		// Always use first fixture for labelling contact data.
@@ -57,124 +47,26 @@ public class NPC extends Pawn {
 		fixtureData.put("type", NPC_USER_DATA);
 		this.getBody().getFixtureList().get(0).setUserData(fixtureData);
 		//this.getBody().setUserData(PLAYER_USER_DATA);
+
+		stateStack = new Stack<NPCState>();
+		stateStack.push(new NPCState(this));
+	}
+
+	public void pushState(NPCState s) {
+		stateStack.push(s);
+	}
+
+	public NPCState popState() {
+		return stateStack.pop();
 	}
 
 	@Override
 	public void act(float deltaTime) {
 		super.act(deltaTime);
 
-		moveTowardsWaypoint();
+		stateStack.peek().act(deltaTime);
 
 		updatePosition();
-
-		updateAlertState(deltaTime);
-	}
-
-	private void updateAlertState(float deltaTime) {
-		// Logic for transitioning between states and seeking player.
-		boolean transitioningAwayFromAlert = false;
-		if(sawPlayerFrameBeforeLast) {
-			spotTimer += deltaTime;
-			if(spotTimer > REACTION_TIME || alertTimer > 0) {
-				alertTimer = ALERT_TIME;
-			}
-		} else {
-			// Are we transitioning away from the seen state?
-			transitioningAwayFromAlert = (spotTimer > 0 && spotTimer - deltaTime <= 0);
-
-			// Decrease our timers to zero at lest.
-			if(spotTimer > 0) {
-				spotTimer -= deltaTime;
-			}
-			if(alertTimer > 0) {
-				alertTimer -= deltaTime;
-			}
-		}
-		boolean isAlerted = alertTimer > 0;
-
-		// Now that we know our state.
-		if(isAlerted) {
-			currentWaypoint = lastPlayerLocation;
-		} else if(transitioningAwayFromAlert) {
-			// We want to restore our last waypoint if it was set.
-			if(waypoints != null && waypoints.length > 0) {
-				currentWaypoint = waypoints[currentWaypointIndex];
-			} else {
-				currentWaypoint = null;
-			}
-		}
-
-		// Use for state tracking.
-		sawPlayerFrameBeforeLast = sawPlayerLastFrame;
-		sawPlayerLastFrame = false; // seesPlayerAt is called _after_ this already resolves, so it gets change to the correct value for this frame.
-	}
-
-	private void moveTowardsWaypoint() {
-		if(currentWaypoint == null) { // If we have waypoints, move to our next one.
-			this.state = State.IDLE;
-			if(waypoints != null && waypoints.length > 0) {
-				currentWaypoint = waypoints[currentWaypointIndex];
-			}
-		} else { // Select the next waypoint and decide to move towards it on the bigger axis.
-			this.state = State.MOVING;
-			double dx = 0;
-			double dy = 0;
-			try {
-				dx = currentWaypoint.x - this.getX();
-				dy = currentWaypoint.y - this.getY();
-			} catch(ArrayIndexOutOfBoundsException aioob) {
-				// TODO: Concurrent modification of the array list leads to an exception.  Fix the race condition.
-				currentWaypoint = null;
-				this.state = State.IDLE;
-				return; // Give up the rest of this action.
-			}
-			// Check to see if we're stuck in the same place we were last round.
-			Vector2 currentPosition = new Vector2(this.getX(), this.getY());
-			if(currentPosition.epsilonEquals(previousPosition, 1e-6f)) {
-				// DEBUG: NPC is stuck.
-				System.out.println("Stuck!");
-				moveHorizontalFirst = !moveHorizontalFirst; // Try to unstick ourselves.
-				currentWaypoint = new Vector2(currentWaypoint.x + (2.0f*MainGame.random.nextFloat()-1.0f), currentWaypoint.y + (2.0f*MainGame.random.nextFloat()-1.0f));
-			}
-			previousPosition = currentPosition;
-			// Determine which way to go.
-			if(moveHorizontalFirst || Math.abs(dx) >= Math.abs(dy)) { // Move horizontally.
-				if(dx > 0) {
-					this.direction = Direction.RIGHT;
-				} else if(dx < 0) {
-					this.direction = Direction.LEFT;
-				} else {
-					// We should not see this.
-				}
-			} else { // Move vertically.
-				if(dy > 0) {
-					this.direction = Direction.UP;
-				} else {
-					this.direction = Direction.DOWN;
-				}
-			}
-
-			// Can we pop this waypoint?
-			if(Math.abs(dx)+Math.abs(dy) < walkSpeed) {
-				currentWaypointIndex++;
-
-				// Advance to next waypoint or, if there are none, set to null.
-				if(waypoints == null) {
-					currentWaypoint = null;
-				} else if(currentWaypointIndex >= waypoints.length) {
-					currentWaypointIndex = 0;
-					if(stopAtEnd) {
-						waypoints = null;
-						currentWaypoint = null;
-						waypoints = previousWaypoints;
-					} else {
-						currentWaypoint = waypoints[currentWaypointIndex];
-					}
-				} else {
-					currentWaypoint = waypoints[currentWaypointIndex];
-				}
-			}
-		}
 	}
 
 	private void updatePosition() {
@@ -189,6 +81,10 @@ public class NPC extends Pawn {
 		} else {
 			this.getBody().setLinearVelocity(0, 0);
 		}
+	}
+
+	public void setPatrolRoute(Vector2[] waypoints) {
+		this.stateStack.push(new PatrolState(this, waypoints));
 	}
 
 	public void kill() {
@@ -230,16 +126,105 @@ public class NPC extends Pawn {
 		super.draw(spriteBatch, alpha);
 	}
 
-	public void setWaypoints(Vector2[] wp, boolean stopAtEnd) {
-		this.currentWaypointIndex = 0;
-		this.waypoints = wp;
-		this.stopAtEnd = stopAtEnd;
+	public void setMapReference(Level level) {
+		// TODO: We need a way to get these things to pathfind without passing the level.
+		this.levelReference = level;
 	}
 
 	public void seesPlayerAt(float x, float y) {
-		sawPlayerLastFrame = true;
-		if(lastPlayerLocation == null || x != lastPlayerLocation.x || y != lastPlayerLocation.y) {
-			lastPlayerLocation = new Vector2(x, y); // Recalculate path, too.
+		stateStack.peek().seesPlayerAt(x, y);
+	}
+
+	class NPCState {
+		public NPC self; // Reference to 'this'.
+		public NPCState(NPC npc) {
+			self = npc;
+		}
+		public void act(float deltaTime) {}
+		public void seesPlayerAt(float x, float y) {}
+	}
+
+	class PatrolState extends NPCState {
+		Vector2[] waypoints;
+		Vector2 currentWaypoint;
+		Vector2 previousPosition;
+		int currentWaypointIndex;
+
+		public PatrolState(NPC npc, Vector2[] waypoints) {
+			super(npc);
+			this.waypoints = waypoints;
+			currentWaypointIndex = 0;
+			previousPosition = new Vector2(0f, 0f);
+			currentWaypoint = waypoints[0];
+		}
+
+		@Override
+		public void act(float deltaTime) {
+			moveTowardsWaypoint();
+			advanceToNextWaypoint();
+		}
+
+		void moveTowardsWaypoint() {
+			if(currentWaypoint == null) { // If we have waypoints, move to our next one.
+				self.state = State.IDLE;
+				if(waypoints != null && waypoints.length > 0) {
+					currentWaypoint = waypoints[currentWaypointIndex];
+				}
+			} else { // Select the next waypoint and decide to move towards it on the bigger axis.
+				self.state = State.MOVING;
+				double dx = 0;
+				double dy = 0;
+				try {
+					dx = currentWaypoint.x - self.getX();
+					dy = currentWaypoint.y - self.getY();
+				} catch(ArrayIndexOutOfBoundsException aioob) {
+					// TODO: Concurrent modification of the array list leads to an exception.  Fix the race condition.
+					currentWaypoint = null;
+					self.state = State.IDLE;
+					return; // Give up the rest of this action.
+				}
+				// Check to see if we're stuck in the same place we were last round.
+				Vector2 currentPosition = new Vector2(self.getX(), self.getY());
+				if(currentPosition.epsilonEquals(previousPosition, 1e-6f)) {
+					// DEBUG: NPC is stuck.
+					System.out.println("Stuck!");
+					currentWaypoint = new Vector2(currentWaypoint.x + (16.0f*MainGame.random.nextFloat()-8.0f), currentWaypoint.y + (16.0f*MainGame.random.nextFloat()-8.0f));
+				}
+				previousPosition = currentPosition;
+				// Determine which way to go.
+				if(Math.abs(dx) >= Math.abs(dy)) { // Move horizontally.
+					if(dx > 0) {
+						self.direction = Direction.RIGHT;
+					} else if(dx < 0) {
+						self.direction = Direction.LEFT;
+					} else {
+						// We should not see this.
+					}
+				} else { // Move vertically.
+					if(dy > 0) {
+						self.direction = Direction.UP;
+					} else {
+						self.direction = Direction.DOWN;
+					}
+				}
+			}
+		}
+
+		public void advanceToNextWaypoint() {
+			double dx = currentWaypoint.x - self.getX();
+			double dy = currentWaypoint.y - self.getY();
+
+			// Can we pop this waypoint?
+			if(Math.abs(dx)+Math.abs(dy) < walkSpeed) {
+				System.out.println("dx,dy: " + dx + "," + dy + ".  Next waypoint.");
+				currentWaypointIndex++;
+
+				// Advance to next waypoint or, if there are none, set to null.
+				if(currentWaypointIndex >= waypoints.length) {
+					currentWaypointIndex = 0;
+				}
+				currentWaypoint = waypoints[currentWaypointIndex];
+			}
 		}
 	}
 }

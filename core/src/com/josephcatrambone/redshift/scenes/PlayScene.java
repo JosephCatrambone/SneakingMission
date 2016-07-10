@@ -63,7 +63,10 @@ public class PlayScene extends Scene {
 			Vector2 pos = level.getNPCSpawnPoint(i);
 			NPC npc = new NPC((int)pos.x, (int)pos.y);
 			npc.direction = level.getNPCDirection(i);
-			npc.setWaypoints(level.getNPCWaypoints(i), false);
+			Vector2[] waypoints = level.getNPCWaypoints(i);
+			if(waypoints != null && waypoints.length > 0) {
+				npc.setPatrolRoute(waypoints);
+			}
 			stage.addActor(npc);
 			npcs.add(npc);
 		}
@@ -135,14 +138,6 @@ public class PlayScene extends Scene {
 					npc.seesPlayerAt(player.getX(), player.getY());
 				}
 			}
-		}
-
-		// DEBUG: Press 'p' to path-find to player.
-		if(Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-			npcs.get(0).setWaypoints(level.getPath(npcs.get(0).getX(), npcs.get(0).getY(), player.getX(), player.getY()), true);
-		}
-		if(Gdx.input.isKeyJustPressed(Input.Keys.O)) {
-			MainGame.pushState(new CodecScene("codecs.json"));
 		}
 
 		// Camera follows player?
