@@ -67,6 +67,7 @@ public class PlayScene extends Scene {
 			if(waypoints != null && waypoints.length > 0) {
 				npc.setPatrolRoute(waypoints);
 			}
+			npc.setMapReference(level);
 			stage.addActor(npc);
 			npcs.add(npc);
 		}

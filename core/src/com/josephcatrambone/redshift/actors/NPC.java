@@ -37,7 +37,7 @@ public class NPC extends Pawn {
 	private Level levelReference;
 
 	public NPC(int x, int y) {
-		this.fov = (float)Math.toRadians(35);
+		this.fov = (float)Math.toRadians(25);
 		this.sightLimit = 200;
 		create(x, y, 4, 4, 1.0f, SPRITESHEET); // TINY hitbox.
 		createDefaultAnimations();
@@ -135,31 +135,83 @@ public class NPC extends Pawn {
 		stateStack.peek().seesPlayerAt(x, y);
 	}
 
+	public boolean isAlerted() {
+		// TODO: This isn't a great way to handle this.
+		return this.stateStack.peek() instanceof ChaseState;
+	}
+
 	class NPCState {
 		public NPC self; // Reference to 'this'.
+
 		public NPCState(NPC npc) {
 			self = npc;
 		}
-		public void act(float deltaTime) {}
-		public void seesPlayerAt(float x, float y) {}
+		public void act(float deltaTime) {
+			self.state = State.IDLE; // TODO: This could be bad if the NPC is dead.
+		}
+
+		public void seesPlayerAt(float x, float y) {
+			// First push the return, then the pursuit.
+			self.pushState(new GotoState(self, new Vector2(self.getX(), self.getY()))); // Return
+			self.pushState(new ChaseState(self, new Vector2(x, y))); // Go towards player.
+		}
 	}
 
-	class PatrolState extends NPCState {
-		Vector2[] waypoints;
-		Vector2 currentWaypoint;
-		Vector2 previousPosition;
-		int currentWaypointIndex;
-
-		public PatrolState(NPC npc, Vector2[] waypoints) {
-			super(npc);
-			this.waypoints = waypoints;
-			currentWaypointIndex = 0;
-			previousPosition = new Vector2(0f, 0f);
-			currentWaypoint = waypoints[0];
+	/*** ChaseState
+	 * Like GotoState, but won't add another chase state onto the stack if it sees player.
+	 */
+	class ChaseState extends GotoState {
+		public ChaseState(NPC npc, Vector2 target) {
+			super(npc, target);
 		}
 
 		@Override
 		public void act(float deltaTime) {
+			self.walkSpeed = CHASE_SPEED;
+			super.act(deltaTime);
+		}
+
+		@Override
+		public void seesPlayerAt(float x, float y) {
+			// First push the return, then the pursuit.
+			this.waypoints = self.levelReference.getPath(self.getX(), self.getY(), x, y);
+			// Since map aliasing may cause the first waypoint to be behind us, try and start from the second.
+			if(waypoints.length > 1) {
+				this.currentWaypointIndex = 1;
+				this.currentWaypoint = waypoints[1];
+			}
+		}
+	}
+
+	/*** GotoState
+	 * Calculates path to the target on first run, then moves towards it.
+	 */
+	class GotoState extends NPCState {
+		Vector2 target; // Our ultimate goal.
+		Vector2[] waypoints; // The path we are following now.
+		Vector2 currentWaypoint; // The next place we'll try to get to.
+		Vector2 previousPosition; // Where we were last frame to see if we're stuck.
+		int currentWaypointIndex; // Index of where we are in the waypoint list.
+
+		public GotoState(NPC npc, Vector2 target) {
+			super(npc);
+			this.target = target;
+		}
+
+		@Override
+		public void act(float deltaTime) {
+			// If we have not yet calculated a path, or if the last one was bad, make a new one.
+			if(this.waypoints == null) {
+				this.waypoints = self.levelReference.getPath(self.getX(), self.getY(), target.x, target.y);
+				currentWaypointIndex = 0;
+				if(this.waypoints == null) {
+					// TODO: Log error.  No path.
+					return;
+				}
+				currentWaypoint = null;
+			}
+
+			// Move towards the next waypoint.
 			moveTowardsWaypoint();
 			advanceToNextWaypoint();
 		}
@@ -169,6 +221,8 @@ public class NPC extends Pawn {
 				self.state = State.IDLE;
 				if(waypoints != null && waypoints.length > 0) {
 					currentWaypoint = waypoints[currentWaypointIndex];
+				} else {
+					arrived();
 				}
 			} else { // Select the next waypoint and decide to move towards it on the bigger axis.
 				self.state = State.MOVING;
@@ -215,16 +269,40 @@ public class NPC extends Pawn {
 			double dy = currentWaypoint.y - self.getY();
 
 			// Can we pop this waypoint?
-			if(Math.abs(dx)+Math.abs(dy) < walkSpeed) {
-				System.out.println("dx,dy: " + dx + "," + dy + ".  Next waypoint.");
+			if(Math.abs(dx) < walkSpeed && Math.abs(dy) < walkSpeed) {
 				currentWaypointIndex++;
 
 				// Advance to next waypoint or, if there are none, set to null.
 				if(currentWaypointIndex >= waypoints.length) {
-					currentWaypointIndex = 0;
+					arrived();
+					return;
 				}
 				currentWaypoint = waypoints[currentWaypointIndex];
 			}
+		}
+
+		public void arrived() {
+			self.popState();
+		}
+	}
+
+	/*** PatrolState
+	 * Note: Patrol state does NOT actually do anything. It just pushes the next path onto the stack when 'act' is called.
+	 */
+	class PatrolState extends NPCState {
+		int currentRoutePoint;
+		Vector2[] route;
+		public PatrolState(NPC npc, Vector2[] route) {
+			super(npc);
+			this.currentRoutePoint = 0;
+			this.route = route;
+		}
+
+		@Override
+		public void act(float deltaTime) {
+			self.walkSpeed = PATROL_SPEED;
+			currentRoutePoint = (currentRoutePoint + 1)%route.length;
+			self.pushState(new GotoState(self, route[currentRoutePoint]));
 		}
 	}
 }
