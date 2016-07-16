@@ -13,6 +13,7 @@ import java.util.Stack;
  * Created by josephcatrambone on 7/1/16.
  */
 public class NPC extends Pawn {
+	public static final float GRAB_DISTANCE = 24f;
 	public static final float PATROL_SPEED = 3.0f;
 	public static final float CHASE_SPEED = 7.0f;
 	public static final float REACTION_TIME = 0.5f;
@@ -153,7 +154,20 @@ public class NPC extends Pawn {
 		public void seesPlayerAt(float x, float y) {
 			// First push the return, then the pursuit.
 			self.pushState(new GotoState(self, new Vector2(self.getX(), self.getY()))); // Return
+			self.pushState(new ReturnFromAlert(self));
 			self.pushState(new ChaseState(self, new Vector2(x, y))); // Go towards player.
+		}
+	}
+
+	class ReturnFromAlert extends NPCState {
+		public ReturnFromAlert(NPC npc) {
+			super(npc);
+		}
+
+		public void act(float deltaTime) {
+			self.walkSpeed = NPC.PATROL_SPEED; // Return to normal.
+			// TODO: Play SFX here.
+			self.popState(); // Pop this.
 		}
 	}
 

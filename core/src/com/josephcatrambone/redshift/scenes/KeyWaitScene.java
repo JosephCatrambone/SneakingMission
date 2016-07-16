@@ -42,7 +42,7 @@ public class KeyWaitScene extends Scene {
 
 	@Override
 	public void dispose() {
-		MainGame.assetManager.unload(backgroundImageFilename);
+		//MainGame.assetManager.unload(backgroundImageFilename); // Leak resource.
 	}
 
 	@Override
@@ -50,7 +50,7 @@ public class KeyWaitScene extends Scene {
 		Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
 		batch.begin();
-		batch.draw(bg, 0, 0, bg.getWidth() * 4, bg.getHeight() * 4);
+		batch.draw(bg, (Gdx.graphics.getWidth()-bg.getWidth())*0.5f, (Gdx.graphics.getHeight()-bg.getHeight())*0.5f);
 		batch.end();
 	}
 

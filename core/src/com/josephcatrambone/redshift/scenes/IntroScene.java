@@ -1,5 +1,6 @@
 package com.josephcatrambone.redshift.scenes;
 
+import com.badlogic.gdx.audio.Sound;
 import com.josephcatrambone.redshift.MainGame;
 
 /**
@@ -12,5 +13,8 @@ public class IntroScene extends KeyWaitScene {
 	public IntroScene() {
 		super(INTRO_BG, new TitleScene());
 		this.clearBlack = false;
+
+		// Crappy hack.
+		MainGame.assetManager.get(CodecScene.CODEC_CALL_SFX_FILENAME, Sound.class).play();
 	}
 }

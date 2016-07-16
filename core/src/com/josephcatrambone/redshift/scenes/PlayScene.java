@@ -32,7 +32,6 @@ public class PlayScene extends Scene {
 	Music backgroundMusic;
 	Player player;
 	ArrayList<NPC> npcs;
-	float sceneChangeDelay = 2.5f;
 
 	RegionContactListener regionContactListener;
 
@@ -124,19 +123,21 @@ public class PlayScene extends Scene {
 			player.teleportTo(regionContactListener.teleportX, regionContactListener.teleportY);
 		}
 
-		// How long has the player been dead?
-		if(player.state == Pawn.State.DEAD) {
-			sceneChangeDelay -= deltaTime;
-			if(sceneChangeDelay < 0) {
-				MainGame.switchState(new GameOverScene());
-			}
-		}
-
 		// Does any NPC see the player?
+		float playerX = player.getX();
+		float playerY = player.getY();
 		for(NPC npc : npcs) {
-			if(npc.inConeOfVision(player.getX(), player.getY())) { // Rough cone of vision.
-				if(level.isClearPath(npc.getX(), npc.getY(), player.getX(), player.getY())) {
-					npc.seesPlayerAt(player.getX(), player.getY());
+			if(npc.inConeOfVision(playerX, playerY)) { // Rough cone of vision.
+				if(level.isClearPath(npc.getX(), npc.getY(), playerX, playerY)) {
+					npc.seesPlayerAt(playerX, playerY);
+				}
+			}
+			// If the NPC is in alert mode and is close enough to the player, game over.
+			if(npc.isAlerted()) {
+				System.out.println("Can grab player!");
+				if(Math.abs(npc.getX()-playerX) + Math.abs(npc.getY()-playerY) < NPC.GRAB_DISTANCE) {
+					System.out.println("Grabbed!");
+					MainGame.switchState(new GameOverScene());
 				}
 			}
 		}

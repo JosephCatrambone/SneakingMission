@@ -33,8 +33,8 @@ public class MainGame extends ApplicationAdapter {
 	public void create () {
 		loadAllAssets();
 
-		//switchState(new IntroScene());
-		switchState(new PlayScene());
+		switchState(new IntroScene());
+		//switchState(new PlayScene());
 	}
 
 	@Override
@@ -47,6 +47,9 @@ public class MainGame extends ApplicationAdapter {
 	public void loadAllAssets() {
 		assetManager.load("missing.png", Texture.class);
 		assetManager.load("SneakingMission.ogg", Music.class);
+		assetManager.load(CodecScene.CODEC_CALL_SFX_FILENAME, Sound.class);
+		assetManager.load(CodecScene.CODEC_OPEN_SFX_FILENAME, Sound.class);
+		assetManager.load(CodecScene.CODEC_CLOSE_SFX_FILENAME, Sound.class);
 		assetManager.load("codec.png", Texture.class);
 		assetManager.load("codec.fnt", BitmapFont.class);
 		assetManager.load("radio.png", Texture.class);

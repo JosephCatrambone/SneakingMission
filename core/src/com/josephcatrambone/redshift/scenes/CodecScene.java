@@ -2,6 +2,7 @@ package com.josephcatrambone.redshift.scenes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,6 +18,10 @@ import com.josephcatrambone.redshift.MainGame;
  */
 public class CodecScene extends Scene {
 	public static final String FONT_FILENAME = "codec.fnt";
+	public static final String CODEC_CALL_SFX_FILENAME = "codec_call.ogg";
+	public static final String CODEC_OPEN_SFX_FILENAME = "codec_open.wav";
+	public static final String CODEC_CLOSE_SFX_FILENAME = "codec_close.wav";
+	public static final String RADIO_FILENAME = "radio.png";
 
 	String backgroundImageFilename;
 	String leftImageFilename;
@@ -32,12 +37,15 @@ public class CodecScene extends Scene {
 	Texture rightImage;
 	boolean keyWasPressed;
 
+	Sound openSound;
+	Sound closeSound;
+
 	public boolean clearBlack; // If false, clear color is white.
 
 	public CodecScene(String codecSequenceName) {
 		this.keyWasPressed = false;
 		// TODO: Replace the hard-coding with codec squence loading.
-		backgroundImageFilename = "radio.png";
+		backgroundImageFilename = RADIO_FILENAME;
 		clearBlack = true;
 
 		Json json = new Json();
@@ -57,7 +65,10 @@ public class CodecScene extends Scene {
 		radio = MainGame.assetManager.get(this.backgroundImageFilename);
 		leftImage = MainGame.assetManager.get(this.leftImageFilename);
 		rightImage = MainGame.assetManager.get(this.rightImageFilename);
+		openSound = MainGame.assetManager.get(CODEC_OPEN_SFX_FILENAME);
+		closeSound = MainGame.assetManager.get(CODEC_CLOSE_SFX_FILENAME);
 		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
 		batch = new SpriteBatch();
 		camera.update();
 
@@ -66,6 +77,8 @@ public class CodecScene extends Scene {
 		} else {
 			Gdx.gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
+
+		openSound.play();
 	}
 
 	@Override
@@ -103,6 +116,7 @@ public class CodecScene extends Scene {
 	public void advanceState() {
 		dialogPosition++;
 		if(dialog == null || dialogPosition >= dialog.length) {
+			closeSound.play();
 			MainGame.popState();
 		}
 	}
