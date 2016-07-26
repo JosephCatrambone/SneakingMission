@@ -32,6 +32,7 @@ public class Level {
 	public static final String NPC_TYPE = "npc";
 	public static final String WAYPOINT_TYPE = "waypoint";
 	public static final String GOAL_TYPE = "goal";
+	public static final String CODEC_TYPE = "codec";
 	public static final String PLAYER_START_X_PROPERTY = "playerStartX";
 	public static final String PLAYER_START_Y_PROPERTY = "playerStartY";
 	TiledMap map;
@@ -109,7 +110,7 @@ public class Level {
 				String key = stringIterator.next();
 				String value = rob.getProperties().get(key).toString(); // TODO: Actually get the class type.
 				fixtureData.put(key, (String)value);
-				if(value.equals(TELEPORT_TYPE) || value.equals(GOAL_TYPE)) {
+				if(value.equals(TELEPORT_TYPE) || value.equals(GOAL_TYPE) || value.equals(CODEC_TYPE)) {
 					createFixture = true; // In this part, if we're creating a fixture, we're creating a sensor.
 				} else if(value.equals(NPC_TYPE)) {
 					createFixture = false;

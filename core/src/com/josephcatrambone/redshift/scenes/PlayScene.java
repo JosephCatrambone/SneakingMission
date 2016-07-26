@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.Fixture;
@@ -35,12 +36,19 @@ public class PlayScene extends Scene {
 
 	RegionContactListener regionContactListener;
 
+	boolean drawFovHack = false;
+	ShapeRenderer fovRenderer;
+
 	@Override
 	public void create() {
+		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		MainGame.world = new World(new Vector2(0, 0), true);
 
 		// Set up drawing area.
 		stage = new Stage(new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight())); // Fit viewport = black bars.
+
+		// Set up the FOV renderer.
+		fovRenderer = new ShapeRenderer();
 
 		// Set up work physics.
 		regionContactListener = new RegionContactListener();
@@ -102,6 +110,18 @@ public class PlayScene extends Scene {
 		stage.draw();
 		//debugRenderer.render(MainGame.world, camera.combined);
 		level.drawOverlay(camera);
+
+		// Draw FOV over everything.
+		drawFovHack = !drawFovHack;
+		if(drawFovHack) {
+			fovRenderer.setProjectionMatrix(camera.combined);
+			fovRenderer.begin(ShapeRenderer.ShapeType.Filled);
+			fovRenderer.setColor(0.1f, 0.7f, 0.8f, 0.1f);
+			for (NPC npc : npcs) {
+				npc.drawFOV(fovRenderer);
+			}
+			fovRenderer.end();
+		}
 	}
 
 	@Override

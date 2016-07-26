@@ -1,7 +1,9 @@
 package com.josephcatrambone.redshift.actors;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.josephcatrambone.redshift.Level;
 import com.josephcatrambone.redshift.MainGame;
@@ -18,6 +20,8 @@ public class NPC extends Pawn {
 	public static final float CHASE_SPEED = 7.0f;
 	public static final float REACTION_TIME = 0.5f;
 	public static final float ALERT_TIME = 5.0f;
+	public static final float FOV = 35.0f;
+	public static final float SIGHT_LIMIT = 6*16f;
 	public static final String NPC_USER_DATA = "pawn";
 	public float walkSpeed = 3.0f; // Our default.
 
@@ -38,8 +42,8 @@ public class NPC extends Pawn {
 	private Level levelReference;
 
 	public NPC(int x, int y) {
-		this.fov = (float)Math.toRadians(25);
-		this.sightLimit = 200;
+		this.fov = FOV;
+		this.sightLimit = SIGHT_LIMIT;
 		create(x, y, 4, 4, 1.0f, SPRITESHEET); // TINY hitbox.
 		createDefaultAnimations();
 
@@ -93,38 +97,28 @@ public class NPC extends Pawn {
 	}
 
 	public boolean inConeOfVision(float x, float y) {
-		// Triangle ABC for cone of vision.
-		// dx is not delta x, but the value of D remapped to the origin.
-		double dx = x - this.getX();
-		double dy = y - this.getY();
+		// dot(A,B) = ||A|| * ||B|| * cos(theta)
+		// theta = dot(A,B) / (||A|| * ||B||)
+		Vector2 other = new Vector2(x-this.getX(), y-this.getY());
+		float magnitude = other.len();
+		if(magnitude > sightLimit) { return false; }
+		other = other.scl(1.0f/magnitude);
 
-		double rot = Math.toRadians(this.direction.ordinal()*90);
+		float halfpi = (float)Math.PI*0.5f;
+		Vector2 thisSightVector = new Vector2((float)Math.cos(this.direction.ordinal()*halfpi), (float)Math.sin(this.direction.ordinal()*halfpi));
 
-		double bx = Math.cos(rot+fov)*this.sightLimit;
-		double by = Math.sin(rot+fov)*this.sightLimit;
-		double cx = Math.cos(rot-fov)*this.sightLimit;
-		double cy = Math.sin(rot-fov)*this.sightLimit;
-
-		// bx cx | t1 = dx
-		// by cy | t2   dy
-
-		double determinant = bx*cy-cx*by;
-		if(determinant == 0) {
-			return false;
-		}
-
-		// bx dx
-		// by dy | t2
-
-		double t1 = (dx*cy - cx*dy) / determinant;
-		double t2 = (bx*dy - dx*by) / determinant;
-
-		return (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1 && t2+t2 <= 1);
+		double angle = Math.toDegrees(Math.acos(thisSightVector.dot(other)));
+		System.out.println("Angle to player: " + angle);
+		return angle < fov;
 	}
 
 	@Override
 	public void draw(Batch spriteBatch, float alpha) {
 		super.draw(spriteBatch, alpha);
+	}
+
+	public void drawFOV(ShapeRenderer batch) {
+		batch.arc(this.getX(), this.getY(), this.sightLimit, (float)(this.direction.ordinal()*90.0f)-(this.fov), 2.0f*this.fov);
 	}
 
 	public void setMapReference(Level level) {
@@ -190,7 +184,7 @@ public class NPC extends Pawn {
 			// First push the return, then the pursuit.
 			this.waypoints = self.levelReference.getPath(self.getX(), self.getY(), x, y);
 			// Since map aliasing may cause the first waypoint to be behind us, try and start from the second.
-			if(waypoints.length > 1) {
+			if(waypoints != null && waypoints.length > 1) {
 				this.currentWaypointIndex = 1;
 				this.currentWaypoint = waypoints[1];
 			}

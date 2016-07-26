@@ -12,13 +12,13 @@ import java.util.Map;
 public class RegionContactListener implements ContactListener {
 
 	// If these are set by a collision with a trigger, we'll do something.
-	public boolean playerCooling = false;
-
 	public boolean playerTeleport = false;
 	public int teleportX, teleportY;
 	public String teleportMap;
 
 	public boolean reachedGoal = false;
+
+	public String activeCodecCallDialog = null;
 
 	@Override
 	public void beginContact(Contact contact) {
@@ -50,6 +50,8 @@ public class RegionContactListener implements ContactListener {
 					playerTeleport = true;
 				} else if(objData.get("type").equals(Level.GOAL_TYPE)) {
 					reachedGoal = true;
+				} else if(objData.get("type").equals(Level.CODEC_TYPE)) {
+					activeCodecCallDialog = objData.get("dialog");
 				}
 			}
 		}
@@ -74,7 +76,6 @@ public class RegionContactListener implements ContactListener {
 				playerData = bd;
 				objData = ad;
 			} // TODO: We assume player never self-collides.
-
 		}
 	}
 

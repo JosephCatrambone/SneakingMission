@@ -12,5 +12,6 @@ public class WinScene extends KeyWaitScene {
 	public WinScene() {
 		super(WIN_BG, new TitleScene());
 		this.clearBlack = true;
+		this.scale = 2.0f;
 	}
 }

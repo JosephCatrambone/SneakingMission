@@ -19,6 +19,7 @@ public class KeyWaitScene extends Scene {
 	Camera camera;
 	Texture bg;
 
+	float scale = 1.0f;
 	public boolean clearBlack; // If false, clear color is white.
 
 	public KeyWaitScene(String backgroundImageFilename, Scene nextScene) {
@@ -50,7 +51,7 @@ public class KeyWaitScene extends Scene {
 		Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
 		batch.begin();
-		batch.draw(bg, (Gdx.graphics.getWidth()-bg.getWidth())*0.5f, (Gdx.graphics.getHeight()-bg.getHeight())*0.5f);
+		batch.draw(bg, (Gdx.graphics.getWidth()-bg.getWidth()*scale)*0.5f, (Gdx.graphics.getHeight()-bg.getHeight()*scale)*0.5f, bg.getWidth()*scale, bg.getHeight()*scale);
 		batch.end();
 	}
 

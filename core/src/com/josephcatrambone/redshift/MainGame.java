@@ -33,8 +33,8 @@ public class MainGame extends ApplicationAdapter {
 	public void create () {
 		loadAllAssets();
 
-		switchState(new IntroScene());
-		//switchState(new PlayScene());
+		//switchState(new IntroScene());
+		switchState(new PlayScene());
 	}
 
 	@Override
